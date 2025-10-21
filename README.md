@@ -4,7 +4,7 @@ This repository contains the **Vue.js frontend** for the note-taking application
 
 It provides the user interface and communicates with the backend API.
 
-**Backend:** [https://github.com/mohamadbachrouche/webtech-note-app-be]
+**Backend:** https://github.com/mohamadbachrouche/webtech-note-app-be
 
 
 # .
