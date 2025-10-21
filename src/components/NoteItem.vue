@@ -1,35 +1,35 @@
+<!-- src/components/NoteItem.vue -->
 <script setup lang="ts">
-// Define the 'props' this component expects to receive
-defineProps<{
-  note: {
-    id: number
-    title: string
+import type { Note } from '@/types';
+import { computed } from 'vue';
+
+const props = defineProps<{
+  note: Note
+}>();
+
+const preview = computed(() => {
+  const stripped = props.note.content.replace(/<[^>]+>/g, '');
+  if (stripped.length <= 40) return stripped;
+  return stripped.substring(0, 40) + '...';
+});
+
+const formattedDate = computed(() => {
+  const date = new Date(props.note.lastModified);
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-}>()
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+});
 </script>
 
 <template>
-  <div class="note-item">
-    <h3>{{ note.title }}</h3>
-    <small>ID: {{ note.id }}</small>
+  <div class="note-item" :class="{ pinned: note.pinned }">
+    <div class="note-item-title">{{ note.title }}</div>
+    <div class="note-item-preview">{{ preview }}</div>
+    <div class="note-item-date">{{ formattedDate }}</div>
+    <div v-if="note.pinned" class="pin-indicator">
+      <i class="fas fa-thumbtack"></i>
+    </div>
   </div>
 </template>
-
-<style scoped>
-/* Styles only apply to this component */
-.note-item {
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  background-color: #f9f9f9;
-  color: #333;
-}
-h3 {
-  margin: 0 0 5px 0;
-  font-size: 1.1em;
-}
-small {
-  color: #777;
-}
-</style>
