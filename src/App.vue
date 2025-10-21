@@ -1,109 +1,62 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import NoteItem from './components/NoteItem.vue' // Import your new component
-import { RouterView } from 'vue-router' // Keep RouterView
+import { ref, computed } from 'vue'
+// Remove NoteItem import (will be used in Sidebar)
+// import { RouterView } from 'vue-router' // Keep commented/removed for now
 
-// Define the structure of a Note object using TypeScript
-interface Note {
-  id: number;
-  title: string;
+// Import the new components
+import TopBar from './components/TopBar.vue'
+import Sidebar from './components/Sidebar.vue'
+import NoteEditor from './components/NoteEditor.vue'
+// Import the Note type definition from the types folder
+import type { Note } from './types'
+
+// Rename 'notes' to 'allNotes' and use the full Note structure
+// Also update the hardcoded data to match the full structure
+const allNotes = ref<Note[]>([
+  { id: 1, title: 'My First Note', content: 'This is the content...', createdAt: new Date('2025-10-20T10:00:00Z'), lastModified: new Date('2025-10-20T11:30:00Z'), pinned: true, inTrash: false, tags: 'welcome' },
+  { id: 2, title: 'Shopping List', content: 'Milk, Bread, Eggs', createdAt: new Date('2025-10-19T15:00:00Z'), lastModified: new Date('2025-10-19T15:00:00Z'), pinned: false, inTrash: false, tags: 'tasks' },
+  { id: 3, title: 'Webtech M2 - v-for Loop', content: 'Completed...', createdAt: new Date('2025-10-18T09:00:00Z'), lastModified: new Date('2025-10-20T12:00:00Z'), pinned: false, inTrash: false, tags: 'htw,project' }
+])
+// Add state to track which note is currently selected
+const selectedNoteId = ref<number | null>(null);
+
+// Add computed properties to automatically filter notes
+const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
+const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
+const selectedNote = computed(() => allNotes.value.find(n => n.id === selectedNoteId.value) || null);
+
+// Add function to handle note selection event from Sidebar
+function handleSelectNote(id: number) {
+  selectedNoteId.value = id;
 }
 
-// Create a reactive array to hold the notes
-// 'ref' makes it reactive, so Vue updates the page if it changes
-const notes = ref<Note[]>([
-  { id: 101, title: 'My First Note' },
-  { id: 102, title: 'Shopping List Ideas' },
-  { id: 103, title: 'Webtech M2 - v-for Loop' }
-])
+// Add placeholder function for adding new notes
+function handleAddNewNote() {
+  console.log('Request to add a new note!');
+  selectedNoteId.value = null; // Deselect current note when adding new
+}
 </script>
 
 <template>
-  <header class="app-header">
-    <h1>My Awesome Note App</h1>
-    <nav>
-    </nav>
-  </header>
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
 
-  <main class="main-content">
-    <h2>Notes List (M2 Demo)</h2>
-
-    <NoteItem
-      v-for="note in notes"
-      :key="note.id"
-      :note="note"
-    />
-
-    <RouterView />
-  </main>
+  <div class="app-container">
+    <TopBar />
+    <div class="main-content">
+      <Sidebar
+        :pinned-notes="pinnedNotes"
+        :regular-notes="regularNotes"
+        @select-note="handleSelectNote"
+        @add-new-note="handleAddNewNote"
+      />
+      <NoteEditor :selected-note="selectedNote" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
-.app-header {
-  line-height: 1.5;
-  border-bottom: 1px solid var(--color-border);
-  padding: 1rem 0;
-  margin-bottom: 1rem;
-}
-
-.main-content {
-  padding: 0 1rem; /* Adjust padding as needed */
-}
-
-h1 {
-  font-weight: 500;
-  font-size: 2rem;
-}
-
-h2 {
-  margin-bottom: 1rem;
-  color: var(--color-heading);
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-/* Basic layout styles, adjust as needed */
-@media (min-width: 1024px) {
-  .app-header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-  .main-content {
-    padding-left: calc(var(--section-gap) / 2);
-  }
-  h1 {
-    /* Adjust positioning if needed */
-  }
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-    padding: 1rem 0;
-    margin-top: 0; /* Adjust margin for desktop */
-  }
-}
+/* Styles from the M2 version can mostly be removed
+   as styles.css provides the main styling.
+   Keep only if needed for App.vue specific layout adjustments */
 </style>
