@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue' // Add onMounted
 import TopBar from './components/TopBar.vue'
-import Sidebar from './components/Sidebar.vue'
+import Sidebar from './components/SideBar.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import type { Note } from './types'
 import axios from 'axios' // Import axios
