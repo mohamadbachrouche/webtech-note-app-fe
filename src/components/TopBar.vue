@@ -16,7 +16,4 @@
   </div>
 </template>
 
-<style scoped>
-/* No specific styles needed here yet,
-   as the main styling comes from styles.css */
-</style>
+
