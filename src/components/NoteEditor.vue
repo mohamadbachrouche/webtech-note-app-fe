@@ -12,28 +12,37 @@ const emit = defineEmits(['update-note', 'delete-note']);
 const editableTitle = ref('');
 const editableContent = ref('');
 
-// Watch for when the selectedNote prop changes
+// This 'watch' is crucial. It fires when the selectedNote prop changes.
 watch(() => props.selectedNote, (newNote) => {
   if (newNote) {
+    // Update local state WITH the new note's data
     editableTitle.value = newNote.title;
     editableContent.value = newNote.content;
   } else {
+    // A note was deselected (or deleted), so clear the editor
     editableTitle.value = '';
     editableContent.value = '';
   }
 });
 
-// Function to handle auto-save on blur (when user clicks away)
+// This function is called when the user types in the content div
+function onContentInput(e: Event) {
+  // Update our local 'editableContent' variable with the div's innerHTML
+  const target = e.target as HTMLDivElement;
+  editableContent.value = target.innerHTML;
+}
+
+// This function is called when the user clicks away
 function onContentChange() {
   if (!props.selectedNote) return;
-  // Create an updated note object
+
   const updatedNote = {
     ...props.selectedNote,
     title: editableTitle.value,
     content: editableContent.value,
-    // (We'll add tags/pinning later)
   };
-  // Emit the event to App.vue
+
+  // Send the *correct* local data up to App.vue
   emit('update-note', updatedNote);
 }
 
@@ -42,7 +51,6 @@ function onDeleteClick() {
     emit('delete-note', props.selectedNote.id);
   }
 }
-
 </script>
 
 <template>
@@ -65,10 +73,12 @@ function onDeleteClick() {
           <i class="fas fa-trash"></i>
         </button>
       </div>
+
       <div
         class="note-text-input"
         contenteditable="true"
-        v-text="editableContent"
+        v-html="editableContent"
+        @input="onContentInput"
         @blur="onContentChange"
       ></div>
     </div>
