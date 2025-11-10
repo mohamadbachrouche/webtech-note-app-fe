@@ -1,14 +1,15 @@
-<!-- src/components/Sidebar.vue -->
 <script setup lang="ts">
 import NoteItem from './NoteItem.vue';
 import type { Note } from '@/types';
 
 defineProps<{
   pinnedNotes: Note[],
-  regularNotes: Note[]
+  regularNotes: Note[],
+  trashedNotes: Note[], // --- NEW
+  currentView: 'notes' | 'trash' // --- NEW
 }>();
 
-const emit = defineEmits(['select-note', 'add-new-note']);
+const emit = defineEmits(['select-note', 'add-new-note', 'switch-view']);
 </script>
 
 <template>
@@ -32,12 +33,28 @@ const emit = defineEmits(['select-note', 'add-new-note']);
       </div>
     </div>
 
+    <!-- --- MODIFIED: Tabs are now functional --- -->
     <div class="tabs">
-      <div class="tab active" id="notes-tab">Notes</div>
-      <div class="tab" id="trash-tab">Trash</div>
+      <div
+        class="tab"
+        :class="{ active: currentView === 'notes' }"
+        id="notes-tab"
+        @click="emit('switch-view', 'notes')"
+      >
+        Notes
+      </div>
+      <div
+        class="tab"
+        :class="{ active: currentView === 'trash' }"
+        id="trash-tab"
+        @click="emit('switch-view', 'trash')"
+      >
+        Trash
+      </div>
     </div>
 
-    <div class="notes-container" id="notes-section">
+    <!-- --- MODIFIED: Show EITHER notes OR trash --- -->
+    <div v-if="currentView === 'notes'" class="notes-container" id="notes-section">
       <div class="section-heading" v-if="pinnedNotes.length > 0">Pinned</div>
       <div id="pinned-notes">
         <NoteItem
@@ -52,6 +69,18 @@ const emit = defineEmits(['select-note', 'add-new-note']);
       <div id="notes-list">
         <NoteItem
           v-for="note in regularNotes"
+          :key="note.id"
+          :note="note"
+          @click="emit('select-note', note.id)"
+        />
+      </div>
+    </div>
+
+    <!-- --- NEW: Trash view --- -->
+    <div v-else class="trash-container" id="trash-section">
+      <div id="trash-list">
+        <NoteItem
+          v-for="note in trashedNotes"
           :key="note.id"
           :note="note"
           @click="emit('select-note', note.id)"
