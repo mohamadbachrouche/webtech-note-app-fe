@@ -8,8 +8,14 @@ const apiClient = axios.create({
   }
 });
 
-export const getNotes = () => {
+// --- MODIFIED: Renamed to be specific ---
+export const getActiveNotes = () => {
   return apiClient.get<Note[]>('/notes');
+}
+
+// --- NEW ---
+export const getTrashedNotes = () => {
+  return apiClient.get<Note[]>('/notes/trash');
 }
 
 export const createNote = (noteData: Partial<Note>) => {
@@ -20,6 +26,17 @@ export const updateNote = (id: number, noteData: Partial<Note>) => {
   return apiClient.put<Note>(`/notes/${id}`, noteData);
 }
 
-export const deleteNote = (id: number) => {
-  return apiClient.delete(`/notes/${id}`);
+// --- MODIFIED: Points to the new "move to trash" endpoint ---
+export const moveToTrash = (id: number) => {
+  return apiClient.put<Note>(`/notes/trash/${id}`);
+}
+
+// --- NEW ---
+export const restoreNote = (id: number) => {
+  return apiClient.put<Note>(`/notes/restore/${id}`);
+}
+
+// --- NEW ---
+export const deleteNotePermanently = (id: number) => {
+  return apiClient.delete(`/notes/permanent/${id}`);
 }
