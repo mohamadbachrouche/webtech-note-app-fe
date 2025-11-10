@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import TopBar from './components/TopBar.vue'
-import Sidebar from './components/SideBar.vue'
+import Sidebar from './components/SideBar.vue' // Corrected this to SideBar
 import NoteEditor from './components/NoteEditor.vue'
 import type { Note } from './types'
 import * as ApiService from './services/ApiService'
 
+// --- 1. DEFINE ALL STATE REFS FIRST ---
 const allNotes = ref<Note[]>([]);
 const selectedNoteId = ref<number | null>(null);
-// --- NEW: State to track which view is active ---
 const currentView = ref<'notes' | 'trash'>('notes');
+const isDarkMode = ref(false);
 
-// This function will now load notes based on the current view
+// --- 2. DEFINE ALL FUNCTIONS SECOND ---
+function setTheme(dark: boolean) {
+  isDarkMode.value = dark;
+  localStorage.setItem('darkMode', dark ? 'true' : 'false');
+}
+
+function toggleTheme() {
+  setTheme(!isDarkMode.value);
+}
+
 async function loadNotes() {
   try {
     let response;
@@ -26,13 +36,6 @@ async function loadNotes() {
   }
 }
 
-// Load notes when the app first mounts
-onMounted(loadNotes);
-
-const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
-const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
-const selectedNote = computed(() => allNotes.value.find(n => n.id === selectedNoteId.value) || null);
-
 function handleSelectNote(id: number) {
   selectedNoteId.value = id;
 }
@@ -41,7 +44,7 @@ async function handleAddNewNote() {
   const newNoteData = { title: 'New Note', content: '', tags: '' };
   try {
     const response = await ApiService.createNote(newNoteData);
-    allNotes.value.push(response.data);
+    await loadNotes(); // Reload the list from the server
     selectedNoteId.value = response.data.id;
   } catch (error) {
     console.error('Failed to create note:', error);
@@ -60,56 +63,69 @@ async function handleUpdateNote(noteToUpdate: Note) {
   }
 }
 
-// --- MODIFIED: Renamed and now calls moveToTrash ---
 async function handleMoveToTrash(noteId: number) {
   try {
     await ApiService.moveToTrash(noteId);
-    // Remove from list immediately
-    allNotes.value = allNotes.value.filter(n => n.id !== noteId);
     selectedNoteId.value = null;
+    await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to move note to trash:', error);
   }
 }
 
-// --- NEW ---
 async function handleRestoreNote(noteId: number) {
   try {
     await ApiService.restoreNote(noteId);
-    // Remove from trash list
-    allNotes.value = allNotes.value.filter(n => n.id !== noteId);
     selectedNoteId.value = null;
+    await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to restore note:', error);
   }
 }
 
-// --- NEW ---
 async function handleDeletePermanently(noteId: number) {
   try {
     await ApiService.deleteNotePermanently(noteId);
-    // Remove from trash list
-    allNotes.value = allNotes.value.filter(n => n.id !== noteId);
     selectedNoteId.value = null;
+    await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to permanently delete note:', error);
   }
 }
 
-// --- NEW ---
 function handleSwitchView(view: 'notes' | 'trash') {
   currentView.value = view;
   selectedNoteId.value = null;
   loadNotes(); // Reload notes for the new view
 }
+
+// --- 3. DEFINE COMPUTED PROPERTIES THIRD ---
+const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
+const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
+const selectedNote = computed(() => allNotes.value.find(n => n.id === selectedNoteId.value) || null);
+
+// --- 4. RUN ONMOUNTED HOOK LAST ---
+onMounted(async () => {
+  // Load theme
+  const savedTheme = localStorage.getItem('darkMode');
+  if (savedTheme !== null) {
+    setTheme(savedTheme === 'true');
+  } else {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark);
+  }
+
+  // Load initial notes
+  await loadNotes();
+});
 </script>
 
 <template>
   <div class="bg-image"></div>
   <div class="bg-overlay"></div>
 
-  <div class="app-container">
-    <TopBar />
+  <div class="app-container" :class="{ 'dark-theme': isDarkMode }">
+    <TopBar @toggle-theme="toggleTheme" />
     <div class="main-content">
       <Sidebar
         :pinned-notes="pinnedNotes"
