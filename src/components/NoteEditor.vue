@@ -8,31 +8,29 @@ const props = defineProps<{
 
 const emit = defineEmits(['update-note', 'delete-note']);
 
-// Create local copies of the note data to allow editing
 const editableTitle = ref('');
 const editableContent = ref('');
+// A ref to get direct access to the content div
+const contentEditorRef = ref<HTMLDivElement | null>(null);
 
-// This 'watch' is crucial. It fires when the selectedNote prop changes.
 watch(() => props.selectedNote, (newNote) => {
   if (newNote) {
-    // Update local state WITH the new note's data
     editableTitle.value = newNote.title;
     editableContent.value = newNote.content;
   } else {
-    // A note was deselected (or deleted), so clear the editor
     editableTitle.value = '';
     editableContent.value = '';
   }
 });
 
-// This function is called when the user types in the content div
-function onContentInput(e: Event) {
-  // Update our local 'editableContent' variable with the div's innerHTML
-  const target = e.target as HTMLDivElement;
-  editableContent.value = target.innerHTML;
+// --- FIX 1: UPDATE 'onContentInput' ---
+// We need to update the ref when the user types
+function onContentInput() {
+  if (contentEditorRef.value) {
+    editableContent.value = contentEditorRef.value.innerHTML;
+  }
 }
 
-// This function is called when the user clicks away
 function onContentChange() {
   if (!props.selectedNote) return;
 
@@ -42,7 +40,6 @@ function onContentChange() {
     content: editableContent.value,
   };
 
-  // Send the *correct* local data up to App.vue
   emit('update-note', updatedNote);
 }
 
@@ -51,6 +48,30 @@ function onDeleteClick() {
     emit('delete-note', props.selectedNote.id);
   }
 }
+
+// --- FIX 2: ADD 'applyFormat' FUNCTION ---
+// This function will be called by our buttons
+function applyFormat(command: string, value: string | null = null) {
+  // Use the browser's built-in text formatting
+  document.execCommand(command, false, value);
+
+  // Manually update our 'editableContent' ref with the new HTML
+  onContentInput();
+  // Manually save the change
+  onContentChange();
+}
+
+// --- FIX 3: ADD 'onPinClick' FUNCTION ---
+// We will add this for the pin button
+function onPinClick() {
+  if (!props.selectedNote) return;
+  // Emit an update event, but with the 'pinned' value flipped
+  emit('update-note', {
+    ...props.selectedNote,
+    pinned: !props.selectedNote.pinned
+  });
+}
+
 </script>
 
 <template>
@@ -65,16 +86,60 @@ function onDeleteClick() {
           placeholder="Note title"
         >
       </div>
+
+      <!-- --- FIX 4: WIRE UP THE BUTTONS --- -->
       <div class="formatting-tools">
-        <button title="Bold"><i class="fas fa-bold"></i></button>
-        <button title="Italic"><i class="fas fa-italic"></i></button>
+        <button @click="applyFormat('bold')" class="format-btn" data-format="bold" title="Bold">
+          <i class="fas fa-bold"></i>
+        </button>
+        <button @click="applyFormat('italic')" class="format-btn" data-format="italic" title="Italic">
+          <i class="fas fa-italic"></i>
+        </button>
+        <button @click="applyFormat('underline')" class="format-btn" data-format="underline" title="Underline">
+          <i class="fas fa-underline"></i>
+        </button>
+        <div class="divider"></div>
+        <button @click="applyFormat('insertUnorderedList')" class="format-btn" data-format="insertUnorderedList" title="Bullet List">
+          <i class="fas fa-list-ul"></i>
+        </button>
+        <button @click="applyFormat('insertOrderedList')" class="format-btn" data-format="insertOrderedList" title="Numbered List">
+          <i class="fas fa-list-ol"></i>
+        </button>
+        <div class="divider"></div>
+        <button @click="applyFormat('formatBlock', 'h1')" class="format-btn" data-format="formatBlock" data-value="h1" title="Heading 1">
+          <i class="fas fa-heading"></i>1
+        </button>
+        <button @click="applyFormat('formatBlock', 'h2')" class="format-btn" data-format="formatBlock" data-value="h2" title="Heading 2">
+          <i class="fas fa-heading"></i>2
+        </button>
+        <button @click="applyFormat('formatBlock', 'h3')" class="format-btn" data-format="formatBlock" data-value="h3" title="Heading 3">
+          <i class="fas fa-heading"></i>3
+        </button>
+        <div class="divider"></div>
+        <button @click="applyFormat('createLink')" class="format-btn" data-format="createLink" title="Insert Link">
+          <i class="fas fa-link"></i>
+        </button>
         <div class="flex-spacer"></div>
+
+        <!-- --- FIX 5: WIRE UP PIN BUTTON --- -->
+        <button
+          id="pin-btn"
+          class="icon-btn pin-btn"
+          :class="{ active: selectedNote.pinned }"
+          title="Pin Note"
+          @click="onPinClick"
+        >
+          <i class="fas fa-thumbtack"></i>
+        </button>
+
         <button @click="onDeleteClick" id="trash-btn" class="icon-btn" title="Move to Trash">
           <i class="fas fa-trash"></i>
         </button>
       </div>
 
+      <!-- --- FIX 6: UPDATE THE DIV --- -->
       <div
+        ref="contentEditorRef"
         class="note-text-input"
         contenteditable="true"
         v-html="editableContent"
