@@ -6,11 +6,11 @@ const props = defineProps<{
   selectedNote: Note | null
 }>();
 
-const emit = defineEmits(['update-note', 'delete-note']);
+// --- MODIFIED: Added all new events ---
+const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delete-permanently']);
 
 const editableTitle = ref('');
 const editableContent = ref('');
-// A ref to get direct access to the content div
 const contentEditorRef = ref<HTMLDivElement | null>(null);
 
 watch(() => props.selectedNote, (newNote) => {
@@ -23,8 +23,6 @@ watch(() => props.selectedNote, (newNote) => {
   }
 });
 
-// --- FIX 1: UPDATE 'onContentInput' ---
-// We need to update the ref when the user types
 function onContentInput() {
   if (contentEditorRef.value) {
     editableContent.value = contentEditorRef.value.innerHTML;
@@ -32,7 +30,7 @@ function onContentInput() {
 }
 
 function onContentChange() {
-  if (!props.selectedNote) return;
+  if (!props.selectedNote || props.selectedNote.inTrash) return; // Don't save if in trash
 
   const updatedNote = {
     ...props.selectedNote,
@@ -43,29 +41,36 @@ function onContentChange() {
   emit('update-note', updatedNote);
 }
 
-function onDeleteClick() {
+// --- MODIFIED: Emits 'move-to-trash' ---
+function onTrashClick() {
   if (props.selectedNote) {
-    emit('delete-note', props.selectedNote.id);
+    emit('move-to-trash', props.selectedNote.id);
   }
 }
 
-// --- FIX 2: ADD 'applyFormat' FUNCTION ---
-// This function will be called by our buttons
-function applyFormat(command: string, value: string | null = null) {
-  // Use the browser's built-in text formatting
-  document.execCommand(command, false, value);
+// --- NEW ---
+function onRestoreClick() {
+  if (props.selectedNote) {
+    emit('restore-note', props.selectedNote.id);
+  }
+}
 
-  // Manually update our 'editableContent' ref with the new HTML
+// --- NEW ---
+function onDeleteClick() {
+  if (props.selectedNote) {
+    emit('delete-permanently', props.selectedNote.id);
+  }
+}
+
+function applyFormat(command: string, value: string | null = null) {
+  if (props.selectedNote?.inTrash) return; // Don't format in trash
+  document.execCommand(command, false, value);
   onContentInput();
-  // Manually save the change
   onContentChange();
 }
 
-// --- FIX 3: ADD 'onPinClick' FUNCTION ---
-// We will add this for the pin button
 function onPinClick() {
-  if (!props.selectedNote) return;
-  // Emit an update event, but with the 'pinned' value flipped
+  if (!props.selectedNote || props.selectedNote.inTrash) return; // Don't pin in trash
   emit('update-note', {
     ...props.selectedNote,
     pinned: !props.selectedNote.pinned
@@ -76,7 +81,20 @@ function onPinClick() {
 
 <template>
   <div class="note-content-area">
-    <div v-if="selectedNote" class="note-editor">
+    <!-- --- NEW: Show trash options if note is in trash --- -->
+    <div v-if="selectedNote && selectedNote.inTrash" class="trash-options" id="trash-options">
+      <button @click="onRestoreClick" id="restore-btn" class="icon-text-btn">
+        <i class="fas fa-trash-restore"></i>
+        Restore Note
+      </button>
+      <button @click="onDeleteClick" id="delete-permanently-btn" class="icon-text-btn danger-btn">
+        <i class="fas fa-trash-alt"></i>
+        Delete Permanently
+      </button>
+    </div>
+
+    <!-- --- MODIFIED: Show editor only if note is selected AND not in trash --- -->
+    <div v-else-if="selectedNote && !selectedNote.inTrash" class="note-editor">
       <div class="editor-header">
         <input
           type="text"
@@ -86,8 +104,6 @@ function onPinClick() {
           placeholder="Note title"
         >
       </div>
-
-      <!-- --- FIX 4: WIRE UP THE BUTTONS --- -->
       <div class="formatting-tools">
         <button @click="applyFormat('bold')" class="format-btn" data-format="bold" title="Bold">
           <i class="fas fa-bold"></i>
@@ -120,8 +136,6 @@ function onPinClick() {
           <i class="fas fa-link"></i>
         </button>
         <div class="flex-spacer"></div>
-
-        <!-- --- FIX 5: WIRE UP PIN BUTTON --- -->
         <button
           id="pin-btn"
           class="icon-btn pin-btn"
@@ -131,13 +145,12 @@ function onPinClick() {
         >
           <i class="fas fa-thumbtack"></i>
         </button>
-
-        <button @click="onDeleteClick" id="trash-btn" class="icon-btn" title="Move to Trash">
+        <!-- --- MODIFIED: Emits 'move-to-trash' --- -->
+        <button @click="onTrashClick" id="trash-btn" class="icon-btn" title="Move to Trash">
           <i class="fas fa-trash"></i>
         </button>
       </div>
 
-      <!-- --- FIX 6: UPDATE THE DIV --- -->
       <div
         ref="contentEditorRef"
         class="note-text-input"
