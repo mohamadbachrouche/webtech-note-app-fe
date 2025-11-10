@@ -31,38 +31,34 @@ function onContentInput() {
 
 function onContentChange() {
   if (!props.selectedNote || props.selectedNote.inTrash) return; // Don't save if in trash
-
   const updatedNote = {
     ...props.selectedNote,
     title: editableTitle.value,
     content: editableContent.value,
   };
-
+  
   emit('update-note', updatedNote);
 }
 
-// --- MODIFIED: Emits 'move-to-trash' ---
 function onTrashClick() {
   if (props.selectedNote) {
     emit('move-to-trash', props.selectedNote.id);
   }
 }
 
-// --- NEW ---
 function onRestoreClick() {
   if (props.selectedNote) {
     emit('restore-note', props.selectedNote.id);
   }
 }
 
-// --- NEW ---
 function onDeleteClick() {
   if (props.selectedNote) {
     emit('delete-permanently', props.selectedNote.id);
   }
 }
 
-function applyFormat(command: string, value: string | null = null) {
+function applyFormat(command: string, value?: string) {
   if (props.selectedNote?.inTrash) return; // Don't format in trash
   document.execCommand(command, false, value);
   onContentInput();
@@ -76,9 +72,8 @@ function onPinClick() {
     pinned: !props.selectedNote.pinned
   });
 }
-
+  
 </script>
-
 <template>
   <div class="note-content-area">
     <!-- --- NEW: Show trash options if note is in trash --- -->
