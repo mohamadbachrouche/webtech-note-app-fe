@@ -4,19 +4,30 @@ import TopBar from './components/TopBar.vue'
 import Sidebar from './components/SideBar.vue'
 import NoteEditor from './components/NoteEditor.vue'
 import type { Note } from './types'
-import * as ApiService from './services/ApiService' // Import your new service
+import * as ApiService from './services/ApiService'
 
 const allNotes = ref<Note[]>([]);
 const selectedNoteId = ref<number | null>(null);
+// --- NEW: State to track which view is active ---
+const currentView = ref<'notes' | 'trash'>('notes');
 
-onMounted(async () => {
+// This function will now load notes based on the current view
+async function loadNotes() {
   try {
-    const response = await ApiService.getNotes(); // Use ApiService
+    let response;
+    if (currentView.value === 'notes') {
+      response = await ApiService.getActiveNotes();
+    } else {
+      response = await ApiService.getTrashedNotes();
+    }
     allNotes.value = response.data;
   } catch (error) {
     console.error('Failed to fetch notes:', error);
   }
-});
+}
+
+// Load notes when the app first mounts
+onMounted(loadNotes);
 
 const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
 const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
@@ -26,27 +37,20 @@ function handleSelectNote(id: number) {
   selectedNoteId.value = id;
 }
 
-// M4: Implement "Create Note"
 async function handleAddNewNote() {
-  const newNoteData = {
-    title: 'New Note',
-    content: '',
-    tags: '',
-  };
+  const newNoteData = { title: 'New Note', content: '', tags: '' };
   try {
-    const response = await ApiService.createNote(newNoteData); // Call POST route
-    allNotes.value.push(response.data); // Add new note to list
-    selectedNoteId.value = response.data.id; // Select the new note
+    const response = await ApiService.createNote(newNoteData);
+    allNotes.value.push(response.data);
+    selectedNoteId.value = response.data.id;
   } catch (error) {
     console.error('Failed to create note:', error);
   }
 }
 
-// M4: Implement "Update Note"
 async function handleUpdateNote(noteToUpdate: Note) {
   try {
     const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate);
-    // Find and update the note in the local list
     const index = allNotes.value.findIndex(n => n.id === response.data.id);
     if (index !== -1) {
       allNotes.value[index] = response.data;
@@ -56,35 +60,72 @@ async function handleUpdateNote(noteToUpdate: Note) {
   }
 }
 
-// M4: Implement "Delete Note"
-async function handleDeleteNote(noteId: number) {
+// --- MODIFIED: Renamed and now calls moveToTrash ---
+async function handleMoveToTrash(noteId: number) {
   try {
-    await ApiService.deleteNote(noteId);
-    // Remove the note from the local list
+    await ApiService.moveToTrash(noteId);
+    // Remove from list immediately
     allNotes.value = allNotes.value.filter(n => n.id !== noteId);
-    selectedNoteId.value = null; // Deselect the note
+    selectedNoteId.value = null;
   } catch (error) {
-    console.error('Failed to delete note:', error);
+    console.error('Failed to move note to trash:', error);
   }
+}
+
+// --- NEW ---
+async function handleRestoreNote(noteId: number) {
+  try {
+    await ApiService.restoreNote(noteId);
+    // Remove from trash list
+    allNotes.value = allNotes.value.filter(n => n.id !== noteId);
+    selectedNoteId.value = null;
+  } catch (error) {
+    console.error('Failed to restore note:', error);
+  }
+}
+
+// --- NEW ---
+async function handleDeletePermanently(noteId: number) {
+  try {
+    await ApiService.deleteNotePermanently(noteId);
+    // Remove from trash list
+    allNotes.value = allNotes.value.filter(n => n.id !== noteId);
+    selectedNoteId.value = null;
+  } catch (error) {
+    console.error('Failed to permanently delete note:', error);
+  }
+}
+
+// --- NEW ---
+function handleSwitchView(view: 'notes' | 'trash') {
+  currentView.value = view;
+  selectedNoteId.value = null;
+  loadNotes(); // Reload notes for the new view
 }
 </script>
 
 <template>
   <div class="bg-image"></div>
   <div class="bg-overlay"></div>
+
   <div class="app-container">
     <TopBar />
     <div class="main-content">
       <Sidebar
         :pinned-notes="pinnedNotes"
         :regular-notes="regularNotes"
+        :trashed-notes="allNotes.filter(n => n.inTrash)"
+        :current-view="currentView"
         @select-note="handleSelectNote"
         @add-new-note="handleAddNewNote"
+        @switch-view="handleSwitchView"
       />
       <NoteEditor
         :selected-note="selectedNote"
         @update-note="handleUpdateNote"
-        @delete-note="handleDeleteNote"
+        @move-to-trash="handleMoveToTrash"
+        @restore-note="handleRestoreNote"
+        @delete-permanently="handleDeletePermanently"
       />
     </div>
   </div>
