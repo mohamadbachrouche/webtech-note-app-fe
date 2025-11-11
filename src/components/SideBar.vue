@@ -25,6 +25,52 @@ const filteredTrashedNotes = computed(() => {
   if (!normalizedQuery.value) return props.trashedNotes;
   return props.trashedNotes.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
 });
+
+// Sorting state and helpers
+const sortOption = ref<'date-desc' | 'date-asc' | 'alpha-asc' | 'alpha-desc'>('date-desc');
+
+function getTime(n: Note) {
+  // Prefer lastModified; fallback to createdAt
+  const lm = new Date(n.lastModified as any).getTime();
+  const ca = new Date(n.createdAt as any).getTime();
+  return isNaN(lm) ? ca : lm;
+}
+
+const filteredPinned = computed(() => {
+  const arr = props.pinnedNotes;
+  if (!normalizedQuery.value) return arr;
+  return arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+});
+
+const filteredRegular = computed(() => {
+  const arr = props.regularNotes;
+  if (!normalizedQuery.value) return arr;
+  return arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+});
+
+function compareNotes(a: Note, b: Note): number {
+  switch (sortOption.value) {
+    case 'alpha-asc':
+      return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' });
+    case 'alpha-desc':
+      return (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base' });
+    case 'date-asc':
+      return getTime(a) - getTime(b);
+    case 'date-desc':
+    default:
+      return getTime(b) - getTime(a);
+  }
+}
+
+const sortedNotes = computed(() => {
+  const pinned = [...filteredPinned.value].sort(compareNotes);
+  const regular = [...filteredRegular.value].sort(compareNotes);
+  return [...pinned, ...regular];
+});
+
+const sortedTrashedNotes = computed(() => {
+  return [...filteredTrashedNotes.value].sort(compareNotes);
+});
 </script>
 
 <template>
@@ -38,7 +84,7 @@ const filteredTrashedNotes = computed(() => {
           <i class="fas fa-plus"></i>
         </button>
         <div class="sort-container">
-          <select id="sort-select">
+          <select id="sort-select" v-model="sortOption">
             <option value="date-desc">Newest First</option>
             <option value="date-asc">Oldest First</option>
             <option value="alpha-asc">A-Z</option>
@@ -72,7 +118,7 @@ const filteredTrashedNotes = computed(() => {
     <div v-if="currentView === 'notes'" class="notes-container" id="notes-section">
       <div id="notes-list">
         <NoteItem
-          v-for="note in filteredNotes"
+          v-for="note in sortedNotes"
           :key="note.id"
           :note="note"
           @click="emit('select-note', note.id)"
@@ -84,7 +130,7 @@ const filteredTrashedNotes = computed(() => {
     <div v-else class="trash-container" id="trash-section">
       <div id="trash-list">
         <NoteItem
-          v-for="note in filteredTrashedNotes"
+          v-for="note in sortedTrashedNotes"
           :key="note.id"
           :note="note"
           @click="emit('select-note', note.id)"
