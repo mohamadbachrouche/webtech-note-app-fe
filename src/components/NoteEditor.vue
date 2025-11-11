@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Note } from '@/types';
-import { ref, watch } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 
 const props = defineProps<{
   selectedNote: Note | null
@@ -33,8 +33,71 @@ function restoreSelection() {
   sel.addRange(lastSelection);
 }
 
+// --- Toolbar state tracking ---
+const isBold = ref(false);
+const isItalic = ref(false);
+const isUnderline = ref(false);
+const isUnorderedList = ref(false);
+const isOrderedList = ref(false);
+const activeHeading = ref<'H1' | 'H2' | 'H3' | null>(null);
+
+function getEditorRoot(): HTMLElement | null {
+  return contentEditorRef.value;
+}
+function getCurrentNode(): Node | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  return sel.anchorNode as Node;
+}
+function closestTag(node: Node | null, tagNames: string[]): Element | null {
+  let el: Node | null = node;
+  const root = getEditorRoot();
+  while (el && el !== root) {
+    if (el instanceof Element) {
+      if (tagNames.includes(el.tagName)) return el;
+    }
+    el = el.parentNode;
+  }
+  return null;
+}
+function isInListContext(): boolean {
+  const node = getCurrentNode();
+  return !!closestTag(node, ['UL', 'OL', 'LI']);
+}
+
+function updateToolbarStates() {
+  try {
+    isBold.value = document.queryCommandState('bold');
+    isItalic.value = document.queryCommandState('italic');
+    isUnderline.value = document.queryCommandState('underline');
+
+    // Lists
+    const ulState = document.queryCommandState('insertUnorderedList');
+    const olState = document.queryCommandState('insertOrderedList');
+    const node = getCurrentNode();
+    const hasUL = !!closestTag(node, ['UL']);
+    const hasOL = !!closestTag(node, ['OL']);
+    isUnorderedList.value = ulState || (!olState && hasUL);
+    isOrderedList.value = olState || (!ulState && hasOL);
+
+    let block = document.queryCommandValue('formatBlock') as string | null;
+    if (block) block = String(block).toUpperCase();
+    let heading: 'H1' | 'H2' | 'H3' | null = null;
+    if (block === 'H1' || block === 'H2' || block === 'H3') {
+      heading = block as 'H1' | 'H2' | 'H3';
+    }
+    if (!heading) {
+      const hEl = closestTag(node, ['H1', 'H2', 'H3']);
+      heading = (hEl ? (hEl.tagName as 'H1' | 'H2' | 'H3') : null);
+    }
+    activeHeading.value = heading;
+  } catch {
+    // Ignore query errors in unsupported browsers
+  }
+}
+
 // Watch for when the selectedNote prop changes
-watch(() => props.selectedNote, (newNote) => {
+watch(() => props.selectedNote, async (newNote) => {
   if (newNote) {
     // Update local state WITH the new note's data
     editableTitle.value = newNote.title;
@@ -53,6 +116,8 @@ watch(() => props.selectedNote, (newNote) => {
       contentEditorRef.value.innerHTML = '';
     }
   }
+  await nextTick();
+  updateToolbarStates();
 });
 
 // This function is called when the user types
@@ -61,11 +126,13 @@ function onContentInput() {
     // Update our local 'editableContent' variable with the div's innerHTML
     editableContent.value = contentEditorRef.value.innerHTML;
   }
+  updateToolbarStates();
 }
 
 // Keep selection saved on key/mouse/input inside the editor
 function onSelectionUpdate() {
   saveSelection();
+  updateToolbarStates();
 }
 
 // This function is called when the user clicks away
@@ -84,10 +151,39 @@ function onContentChange() {
 // --- FIX FOR ENTER KEY ---
 // This stops the weird "div" creation on Enter
 function onKeydown(e: KeyboardEvent) {
+  // Handle Tab indent/outdent within lists
+  if (e.key === 'Tab') {
+    if (isInListContext()) {
+      e.preventDefault();
+      document.execCommand(e.shiftKey ? 'outdent' : 'indent');
+      saveSelection();
+      updateToolbarStates();
+    }
+    return;
+  }
+
   if (e.key === 'Enter') {
-    e.preventDefault(); // Stop the default (weird) behavior
-    document.execCommand('insertLineBreak'); // Insert a <br> tag instead
+    if (isInListContext()) {
+      // Allow default behavior inside lists to create a new list item
+      // Update toolbar state on next tick
+      setTimeout(updateToolbarStates, 0);
+      return;
+    }
+    e.preventDefault(); // Outside lists, insert a <br>
+    document.execCommand('insertLineBreak');
     saveSelection();
+    updateToolbarStates();
+  }
+}
+
+function toggleHeading(level: 'H1' | 'H2' | 'H3') {
+  if (props.selectedNote?.inTrash) return;
+  const current = activeHeading.value;
+  if (current === level) {
+    // Toggle off to paragraph
+    applyFormat('formatBlock', 'p');
+  } else {
+    applyFormat('formatBlock', level);
   }
 }
 
@@ -136,7 +232,7 @@ function applyFormat(command: string, value: string | null = null) {
 
   if (cmd === 'formatBlock' && val) {
     // Some browsers require uppercase tag names
-    val = val.toUpperCase(); // H1/H2/H3
+    val = val.toUpperCase(); // H1/H2/H3/P
   }
 
   if (cmd === 'createLink') {
@@ -152,7 +248,12 @@ function applyFormat(command: string, value: string | null = null) {
   editableContent.value = editor.innerHTML;
   saveSelection();
   onContentChange();
+  updateToolbarStates();
 }
+
+onMounted(() => {
+  nextTick(() => updateToolbarStates());
+});
 
 function onPinClick() {
   if (!props.selectedNote || props.selectedNote.inTrash) return;
@@ -188,16 +289,16 @@ function onPinClick() {
         >
       </div>
       <div class="formatting-tools">
-        <button @mousedown.prevent @click="applyFormat('bold')" class="format-btn" title="Bold"><i class="fas fa-bold"></i></button>
-        <button @mousedown.prevent @click="applyFormat('italic')" class="format-btn" title="Italic"><i class="fas fa-italic"></i></button>
-        <button @mousedown.prevent @click="applyFormat('underline')" class="format-btn" title="Underline"><i class="fas fa-underline"></i></button>
+        <button @mousedown.prevent @click="applyFormat('bold')" :class="['format-btn', { active: isBold }]" title="Bold"><i class="fas fa-bold"></i></button>
+        <button @mousedown.prevent @click="applyFormat('italic')" :class="['format-btn', { active: isItalic }]" title="Italic"><i class="fas fa-italic"></i></button>
+        <button @mousedown.prevent @click="applyFormat('underline')" :class="['format-btn', { active: isUnderline }]" title="Underline"><i class="fas fa-underline"></i></button>
         <div class="divider"></div>
-        <button @mousedown.prevent @click="applyFormat('insertUnorderedList')" class="format-btn" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-        <button @mousedown.prevent @click="applyFormat('insertOrderedList')" class="format-btn" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+        <button @mousedown.prevent @click="applyFormat('insertUnorderedList')" :class="['format-btn', { active: isUnorderedList }]" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+        <button @mousedown.prevent @click="applyFormat('insertOrderedList')" :class="['format-btn', { active: isOrderedList }]" title="Numbered List"><i class="fas fa-list-ol"></i></button>
         <div class="divider"></div>
-        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h1')" class="format-btn" title="Heading 1"><i class="fas fa-heading"></i>1</button>
-        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h2')" class="format-btn" title="Heading 2"><i class="fas fa-heading"></i>2</button>
-        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h3')" class="format-btn" title="Heading 3"><i class="fas fa-heading"></i>3</button>
+        <button @mousedown.prevent @click="toggleHeading('H1')" :class="['format-btn', { active: activeHeading === 'H1' }]" title="Heading 1"><i class="fas fa-heading"></i>1</button>
+        <button @mousedown.prevent @click="toggleHeading('H2')" :class="['format-btn', { active: activeHeading === 'H2' }]" title="Heading 2"><i class="fas fa-heading"></i>2</button>
+        <button @mousedown.prevent @click="toggleHeading('H3')" :class="['format-btn', { active: activeHeading === 'H3' }]" title="Heading 3"><i class="fas fa-heading"></i>3</button>
         <div class="divider"></div>
         <button @mousedown.prevent @click="applyFormat('createLink')" class="format-btn" title="Insert Link"><i class="fas fa-link"></i></button>
         <div class="flex-spacer"></div>
@@ -221,7 +322,7 @@ function onPinClick() {
         contenteditable="true"
         @input="onContentInput"
         @blur="onContentChange"
-        @keydown.enter="onKeydown"
+        @keydown="onKeydown"
         @keyup="onSelectionUpdate"
         @mouseup="onSelectionUpdate"
       ></div>
