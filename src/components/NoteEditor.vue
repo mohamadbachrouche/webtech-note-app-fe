@@ -14,6 +14,25 @@ const editableContent = ref('');
 // A ref to get direct access to the content div
 const contentEditorRef = ref<HTMLDivElement | null>(null);
 
+// Track the last selection range inside the editor so toolbar actions work reliably
+let lastSelection: Range | null = null;
+function saveSelection() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  // Ensure the selection is within our editor
+  if (contentEditorRef.value && contentEditorRef.value.contains(range.commonAncestorContainer)) {
+    lastSelection = range.cloneRange();
+  }
+}
+function restoreSelection() {
+  if (!lastSelection) return;
+  const sel = window.getSelection();
+  if (!sel) return;
+  sel.removeAllRanges();
+  sel.addRange(lastSelection);
+}
+
 // Watch for when the selectedNote prop changes
 watch(() => props.selectedNote, (newNote) => {
   if (newNote) {
@@ -44,6 +63,11 @@ function onContentInput() {
   }
 }
 
+// Keep selection saved on key/mouse/input inside the editor
+function onSelectionUpdate() {
+  saveSelection();
+}
+
 // This function is called when the user clicks away
 function onContentChange() {
   if (!props.selectedNote || props.selectedNote.inTrash) return;
@@ -63,6 +87,7 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter') {
     e.preventDefault(); // Stop the default (weird) behavior
     document.execCommand('insertLineBreak'); // Insert a <br> tag instead
+    saveSelection();
   }
 }
 
@@ -85,14 +110,47 @@ function onDeleteClick() {
   }
 }
 
+function normalizeUrl(url: string): string {
+  try {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  } catch {
+    return '';
+  }
+}
+
 function applyFormat(command: string, value: string | null = null) {
   if (props.selectedNote?.inTrash) return;
-  document.execCommand(command, false, value ?? undefined); // Use AI's fix
+  const editor = contentEditorRef.value;
+  if (!editor) return;
+
+  // Keep focus in the editor and restore selection before applying commands
+  editor.focus();
+  restoreSelection();
+
+  // Normalize special cases
+  let cmd = command;
+  let val: string | undefined = value ?? undefined;
+
+  if (cmd === 'formatBlock' && val) {
+    // Some browsers require uppercase tag names
+    val = val.toUpperCase(); // H1/H2/H3
+  }
+
+  if (cmd === 'createLink') {
+    const input = window.prompt('Enter URL:', 'https://');
+    const href = input ? normalizeUrl(input) : '';
+    if (!href) return; // Abort if no url
+    document.execCommand('createLink', false, href);
+  } else {
+    document.execCommand(cmd, false, val);
+  }
 
   // Manually update our ref and save
-  if (contentEditorRef.value) {
-    editableContent.value = contentEditorRef.value.innerHTML;
-  }
+  editableContent.value = editor.innerHTML;
+  saveSelection();
   onContentChange();
 }
 
@@ -130,18 +188,18 @@ function onPinClick() {
         >
       </div>
       <div class="formatting-tools">
-        <button @click="applyFormat('bold')" class="format-btn" title="Bold"><i class="fas fa-bold"></i></button>
-        <button @click="applyFormat('italic')" class="format-btn" title="Italic"><i class="fas fa-italic"></i></button>
-        <button @click="applyFormat('underline')" class="format-btn" title="Underline"><i class="fas fa-underline"></i></button>
+        <button @mousedown.prevent @click="applyFormat('bold')" class="format-btn" title="Bold"><i class="fas fa-bold"></i></button>
+        <button @mousedown.prevent @click="applyFormat('italic')" class="format-btn" title="Italic"><i class="fas fa-italic"></i></button>
+        <button @mousedown.prevent @click="applyFormat('underline')" class="format-btn" title="Underline"><i class="fas fa-underline"></i></button>
         <div class="divider"></div>
-        <button @click="applyFormat('insertUnorderedList')" class="format-btn" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-        <button @click="applyFormat('insertOrderedList')" class="format-btn" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+        <button @mousedown.prevent @click="applyFormat('insertUnorderedList')" class="format-btn" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+        <button @mousedown.prevent @click="applyFormat('insertOrderedList')" class="format-btn" title="Numbered List"><i class="fas fa-list-ol"></i></button>
         <div class="divider"></div>
-        <button @click="applyFormat('formatBlock', 'h1')" class="format-btn" title="Heading 1"><i class="fas fa-heading"></i>1</button>
-        <button @click="applyFormat('formatBlock', 'h2')" class="format-btn" title="Heading 2"><i class="fas fa-heading"></i>2</button>
-        <button @click="applyFormat('formatBlock', 'h3')" class="format-btn" title="Heading 3"><i class="fas fa-heading"></i>3</button>
+        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h1')" class="format-btn" title="Heading 1"><i class="fas fa-heading"></i>1</button>
+        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h2')" class="format-btn" title="Heading 2"><i class="fas fa-heading"></i>2</button>
+        <button @mousedown.prevent @click="applyFormat('formatBlock', 'h3')" class="format-btn" title="Heading 3"><i class="fas fa-heading"></i>3</button>
         <div class="divider"></div>
-        <button @click="applyFormat('createLink')" class="format-btn" title="Insert Link"><i class="fas fa-link"></i></button>
+        <button @mousedown.prevent @click="applyFormat('createLink')" class="format-btn" title="Insert Link"><i class="fas fa-link"></i></button>
         <div class="flex-spacer"></div>
         <button
           id="pin-btn"
@@ -164,6 +222,8 @@ function onPinClick() {
         @input="onContentInput"
         @blur="onContentChange"
         @keydown.enter="onKeydown"
+        @keyup="onSelectionUpdate"
+        @mouseup="onSelectionUpdate"
       ></div>
     </div>
 
