@@ -55,20 +55,9 @@ const emit = defineEmits(['select-note', 'add-new-note', 'switch-view']);
 
     <!-- --- MODIFIED: Show EITHER notes OR trash --- -->
     <div v-if="currentView === 'notes'" class="notes-container" id="notes-section">
-      <div class="section-heading" v-if="pinnedNotes.length > 0">Pinned</div>
-      <div id="pinned-notes">
-        <NoteItem
-          v-for="note in pinnedNotes"
-          :key="note.id"
-          :note="note"
-          @click="emit('select-note', note.id)"
-        />
-      </div>
-
-      <div class="section-heading" v-if="regularNotes.length > 0">All Notes</div>
       <div id="notes-list">
         <NoteItem
-          v-for="note in regularNotes"
+          v-for="note in [...pinnedNotes, ...regularNotes]"
           :key="note.id"
           :note="note"
           @click="emit('select-note', note.id)"
