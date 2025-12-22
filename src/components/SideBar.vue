@@ -16,11 +16,6 @@ const emit = defineEmits(['select-note', 'add-new-note', 'switch-view']);
 const searchQuery = ref('');
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
-const allNotes = computed(() => [...props.pinnedNotes, ...props.regularNotes]);
-const filteredNotes = computed(() => {
-  if (!normalizedQuery.value) return allNotes.value;
-  return allNotes.value.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
-});
 const filteredTrashedNotes = computed(() => {
   if (!normalizedQuery.value) return props.trashedNotes;
   return props.trashedNotes.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
@@ -31,8 +26,8 @@ const sortOption = ref<'date-desc' | 'date-asc' | 'alpha-asc' | 'alpha-desc'>('d
 
 function getTime(n: Note) {
   // Prefer lastModified; fallback to createdAt
-  const lm = new Date(n.lastModified as any).getTime();
-  const ca = new Date(n.createdAt as any).getTime();
+  const lm = new Date(n.lastModified ).getTime();
+  const ca = new Date(n.createdAt ).getTime();
   return isNaN(lm) ? ca : lm;
 }
 
