@@ -135,6 +135,12 @@ onMounted(async () => {
     setAppBackground(savedBg);
   }
 
+  // Preload images
+  Object.values(BACKGROUND_THEMES).forEach(url => {
+    const img = new Image();
+    img.src = url;
+  });
+
   // Load initial notes
   await loadNotes();
 });
