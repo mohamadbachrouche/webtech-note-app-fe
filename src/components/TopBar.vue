@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 // Define the event this component can send to its parent
 const emit = defineEmits(['toggle-theme', 'change-background']);
@@ -9,18 +9,33 @@ defineProps<{
 }>();
 
 const showColorMenu = ref(false);
+const menuWrapper = ref<HTMLElement | null>(null);
 
 function selectColor(color: string) {
   emit('change-background', color);
   showColorMenu.value = false;
 }
+
+function handleClickOutside(event: MouseEvent) {
+  if (menuWrapper.value && !menuWrapper.value.contains(event.target as Node)) {
+    showColorMenu.value = false;
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
   <div class="top-bar">
     <div class="app-title">Notes</div>
     <div class="top-bar-actions">
-      <div class="theme-menu-wrapper">
+      <div class="theme-menu-wrapper" ref="menuWrapper">
         <button
           class="icon-btn"
           title="Change Background"
