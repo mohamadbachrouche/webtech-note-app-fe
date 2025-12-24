@@ -1,12 +1,47 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
 // Define the event this component can send to its parent
-const emit = defineEmits(['toggle-theme']);
+const emit = defineEmits(['toggle-theme', 'change-background']);
+
+const showColorMenu = ref(false);
+
+function selectColor(color: string) {
+  emit('change-background', color);
+  showColorMenu.value = false;
+}
 </script>
 
 <template>
   <div class="top-bar">
     <div class="app-title">Notes</div>
     <div class="top-bar-actions">
+      <div class="theme-menu-wrapper">
+        <button
+          class="icon-btn"
+          title="Change Background"
+          @click="showColorMenu = !showColorMenu"
+        >
+          <i class="fas fa-palette"></i>
+        </button>
+        <div v-if="showColorMenu" class="color-menu-dropdown">
+          <div
+            class="color-swatch"
+            style="background-color: #0070f5"
+            @click="selectColor('blue')"
+          ></div>
+          <div
+            class="color-swatch"
+            style="background-color: #ffcc00"
+            @click="selectColor('yellow')"
+          ></div>
+          <div
+            class="color-swatch"
+            style="background-color: #34c759"
+            @click="selectColor('green')"
+          ></div>
+        </div>
+      </div>
       <button
         @click="emit('toggle-theme')"
         id="theme-toggle"

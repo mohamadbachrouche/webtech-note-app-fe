@@ -64,7 +64,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', 'Inter', 'Helvetica Neue', 
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', 'Inter', 'Helvetica Neue',
                  Arial, sans-serif, 'Apple Color Emoji';
 }
 
@@ -76,7 +76,6 @@
     width: 100%;
     height: 100%;
     z-index: -2;
-    background-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
     background-size: cover;
     background-position: center;
     filter: brightness(0.9);
@@ -160,6 +159,39 @@ body {
 .top-bar-actions {
     display: flex;
     gap: 12px;
+}
+
+.theme-menu-wrapper {
+    position: relative;
+}
+
+.color-menu-dropdown {
+    position: absolute;
+    top: 110%;
+    right: 0;
+    background: var(--content-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    gap: 8px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
 }
 
 /* Main content layout */
@@ -838,36 +870,36 @@ a:hover {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .app-container {
         padding: 15px;
     }
-    
+
     .top-bar {
         margin-bottom: 15px;
         height: 50px;
     }
-    
+
     .sidebar {
         width: 100%;
         height: auto;
         max-height: 45%;
         border-right: none;
     }
-    
+
     .note-content-area {
         height: 55%;
     }
-    
+
     .note-editor {
         padding: 16px;
     }
-    
+
     .note-title-input {
         font-size: 20px;
         margin-bottom: 10px;
     }
-    
+
     .formatting-tools {
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -879,38 +911,38 @@ a:hover {
     .sidebar {
         max-height: 40%;
     }
-    
+
     .note-content-area {
         height: 60%;
     }
-    
+
     .sidebar-actions {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
     }
-    
+
     .note-title-input {
         font-size: 18px;
         margin-bottom: 8px;
     }
-    
+
     .trash-options {
         flex-direction: column;
         gap: 10px;
         padding: 16px;
     }
-    
+
     .formatting-tools {
         padding: 8px;
         gap: 4px;
     }
-    
+
     .format-btn {
         padding: 4px 6px;
         font-size: 12px;
     }
-    
+
     .note-editor {
         padding: 12px;
     }
@@ -1066,7 +1098,7 @@ a:hover {
     #sidebar-toggle {
         display: flex;
     }
-    
+
     .sidebar {
         position: fixed;
         left: -300px;
@@ -1076,20 +1108,20 @@ a:hover {
         z-index: 1000;
         transition: left 0.3s ease;
     }
-    
+
     .sidebar.visible {
         left: 0;
     }
-    
+
     .main-content {
         flex-direction: column;
     }
-    
+
     .note-content-area {
         width: 100%;
     }
-    
+
     .import-export-container {
         flex-direction: column;
     }
-} 
+}

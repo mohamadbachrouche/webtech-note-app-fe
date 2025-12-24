@@ -21,4 +21,30 @@ describe('TopBar.vue', () => {
     expect(wrapper.emitted()).toHaveProperty('toggle-theme')
     expect(wrapper.emitted('toggle-theme')).toHaveLength(1)
   })
+
+  it('shows color menu when palette button is clicked and emits "change-background" when a color is selected', async () => {
+    const wrapper = mount(TopBar)
+
+    // Find the palette button
+    const paletteBtn = wrapper.find('button[title="Change Background"]')
+    await paletteBtn.trigger('click')
+
+    // Check if color menu is shown
+    const colorMenu = wrapper.find('.color-menu-dropdown')
+    expect(colorMenu.exists()).toBe(true)
+
+    // Find all color swatches
+    const swatches = colorMenu.findAll('.color-swatch')
+    expect(swatches.length).toBe(3)
+
+    // Click the first one (blue)
+    await swatches[0].trigger('click')
+
+    // Check if event was emitted
+    expect(wrapper.emitted()).toHaveProperty('change-background')
+    expect(wrapper.emitted('change-background')![0]).toEqual(['blue'])
+
+    // Check if menu is hidden after selection
+    expect(wrapper.find('.color-menu-dropdown').exists()).toBe(false)
+  })
 })
