@@ -71,4 +71,26 @@ describe('TopBar.vue', () => {
     expect(swatches[1]!.classes()).toContain('active')
     expect(swatches[2]!.classes()).not.toContain('active')
   })
+
+  it('closes color menu when clicking outside', async () => {
+    const wrapper = mount(TopBar, {
+      props: { currentTheme: 'blue' },
+      attachTo: document.body
+    })
+
+    // Open the menu
+    const paletteBtn = wrapper.find('button[title="Change Background"]')
+    await paletteBtn.trigger('click')
+    expect(wrapper.find('.color-menu-dropdown').exists()).toBe(true)
+
+    // Click outside (on document body)
+    await document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    // Wait for Vue to update
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(wrapper.find('.color-menu-dropdown').exists()).toBe(false)
+
+    wrapper.unmount()
+  })
 })
