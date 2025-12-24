@@ -4,6 +4,10 @@ import { ref } from 'vue';
 // Define the event this component can send to its parent
 const emit = defineEmits(['toggle-theme', 'change-background']);
 
+defineProps<{
+  currentTheme: string
+}>();
+
 const showColorMenu = ref(false);
 
 function selectColor(color: string) {
@@ -27,16 +31,19 @@ function selectColor(color: string) {
         <div v-if="showColorMenu" class="color-menu-dropdown">
           <div
             class="color-swatch"
+            :class="{ active: currentTheme === 'blue' }"
             style="background-color: #0070f5"
             @click="selectColor('blue')"
           ></div>
           <div
             class="color-swatch"
+            :class="{ active: currentTheme === 'yellow' }"
             style="background-color: #ffcc00"
             @click="selectColor('yellow')"
           ></div>
           <div
             class="color-swatch"
+            :class="{ active: currentTheme === 'green' }"
             style="background-color: #34c759"
             @click="selectColor('green')"
           ></div>

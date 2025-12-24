@@ -145,7 +145,7 @@ onMounted(async () => {
   <div class="bg-overlay"></div>
 
   <div class="app-container" :class="{ 'dark-theme': isDarkMode }">
-    <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" />
+    <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" :current-theme="currentThemeColor" />
     <div class="main-content">
       <Sidebar
         :pinned-notes="pinnedNotes"
