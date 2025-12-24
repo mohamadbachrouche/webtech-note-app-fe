@@ -31,6 +31,9 @@ describe('TopBar.vue', () => {
       props: { currentTheme: 'blue' }
     })
 
+    // Check if color menu is hidden by default
+    expect(wrapper.find('.color-menu-dropdown').exists()).toBe(false)
+
     // Find the palette button
     const paletteBtn = wrapper.find('button[title="Change Background"]')
     await paletteBtn.trigger('click')
@@ -43,12 +46,12 @@ describe('TopBar.vue', () => {
     const swatches = colorMenu.findAll('.color-swatch')
     expect(swatches.length).toBe(3)
 
-    // Click the first one (blue)
-    await swatches[0]!.trigger('click')
+    // Click the second one (yellow)
+    await swatches[1]!.trigger('click')
 
     // Check if event was emitted
     expect(wrapper.emitted()).toHaveProperty('change-background')
-    expect(wrapper.emitted('change-background')![0]).toEqual(['blue'])
+    expect(wrapper.emitted('change-background')![0]).toEqual(['yellow'])
 
     // Check if menu is hidden after selection
     expect(wrapper.find('.color-menu-dropdown').exists()).toBe(false)
