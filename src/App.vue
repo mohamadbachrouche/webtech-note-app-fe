@@ -6,11 +6,18 @@ import NoteEditor from './components/NoteEditor.vue'
 import type { Note } from './types'
 import * as ApiService from './services/ApiService'
 
+const BACKGROUND_THEMES: Record<string, string> = {
+  blue: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+  yellow: 'https://wallpapercave.com/wp/wp11276048.jpg',
+  green: 'https://mcdn.wallpapersafari.com/medium/34/82/0OWTQ5.jpg'
+};
+
 // --- 1. DEFINE ALL STATE REFS FIRST ---
 const allNotes = ref<Note[]>([]);
 const selectedNoteId = ref<number | null>(null);
 const currentView = ref<'notes' | 'trash'>('notes');
 const isDarkMode = ref(false);
+const currentThemeColor = ref('blue');
 
 // --- 2. DEFINE ALL FUNCTIONS SECOND ---
 function setTheme(dark: boolean) {
@@ -20,6 +27,13 @@ function setTheme(dark: boolean) {
 
 function toggleTheme() {
   setTheme(!isDarkMode.value);
+}
+
+function setAppBackground(color: string) {
+  if (color in BACKGROUND_THEMES) {
+    currentThemeColor.value = color;
+    localStorage.setItem('appBackground', color);
+  }
 }
 
 async function loadNotes() {
@@ -115,17 +129,23 @@ onMounted(async () => {
     setTheme(prefersDark);
   }
 
+  // Load background
+  const savedBg = localStorage.getItem('appBackground');
+  if (savedBg) {
+    setAppBackground(savedBg);
+  }
+
   // Load initial notes
   await loadNotes();
 });
 </script>
 
 <template>
-  <div class="bg-image"></div>
+  <div class="bg-image" :style="{ backgroundImage: `url(${BACKGROUND_THEMES[currentThemeColor]})` }"></div>
   <div class="bg-overlay"></div>
 
   <div class="app-container" :class="{ 'dark-theme': isDarkMode }">
-    <TopBar @toggle-theme="toggleTheme" />
+    <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" />
     <div class="main-content">
       <Sidebar
         :pinned-notes="pinnedNotes"
