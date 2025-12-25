@@ -73,12 +73,6 @@ onUnmounted(() => {
         <span class="light-icon"><i class="fas fa-sun"></i></span>
         <span class="dark-icon"><i class="fas fa-moon"></i></span>
       </button>
-      <button id="export-btn" class="icon-btn" title="Export Notes">
-        <i class="fas fa-download"></i>
-      </button>
-      <button id="import-btn" class="icon-btn" title="Import Notes">
-        <i class="fas fa-upload"></i>
-      </button>
     </div>
   </div>
 </template>

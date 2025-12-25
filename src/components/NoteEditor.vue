@@ -227,7 +227,7 @@ function applyFormat(command: string, value: string | null = null) {
   restoreSelection();
 
   // Normalize special cases
-  let cmd = command;
+  const cmd = command;
   let val: string | undefined = value ?? undefined;
 
   if (cmd === 'formatBlock' && val) {
@@ -296,9 +296,7 @@ function onPinClick() {
         <button @mousedown.prevent @click="applyFormat('insertUnorderedList')" :class="['format-btn', { active: isUnorderedList }]" title="Bullet List"><i class="fas fa-list-ul"></i></button>
         <button @mousedown.prevent @click="applyFormat('insertOrderedList')" :class="['format-btn', { active: isOrderedList }]" title="Numbered List"><i class="fas fa-list-ol"></i></button>
         <div class="divider"></div>
-        <button @mousedown.prevent @click="toggleHeading('H1')" :class="['format-btn', { active: activeHeading === 'H1' }]" title="Heading 1"><i class="fas fa-heading"></i>1</button>
-        <button @mousedown.prevent @click="toggleHeading('H2')" :class="['format-btn', { active: activeHeading === 'H2' }]" title="Heading 2"><i class="fas fa-heading"></i>2</button>
-        <button @mousedown.prevent @click="toggleHeading('H3')" :class="['format-btn', { active: activeHeading === 'H3' }]" title="Heading 3"><i class="fas fa-heading"></i>3</button>
+        <button @mousedown.prevent @click="toggleHeading('H2')" :class="['format-btn', { active: activeHeading === 'H2' }]" title="Heading"><i class="fas fa-heading"></i> Heading</button>
         <div class="divider"></div>
         <button @mousedown.prevent @click="applyFormat('createLink')" class="format-btn" title="Insert Link"><i class="fas fa-link"></i></button>
         <div class="flex-spacer"></div>
