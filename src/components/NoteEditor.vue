@@ -42,17 +42,16 @@ const editor = useEditor({
 });
 
 // Watch for selectedNote changes to update editor content
-watch(() => props.selectedNote, (newNote) => {
+watch(() => props.selectedNote, (newNote, oldNote) => {
   if (newNote) {
-    editableTitle.value = newNote.title;
+    const isSameNote = oldNote && oldNote.id === newNote.id;
 
-    // Only update content if it's different to avoid cursor jumps / loops
-    // or if we switched to a different note entirely
-    if (editor.value) {
-      const currentContent = editor.value.getHTML();
-      if (currentContent !== newNote.content) {
-         editor.value.commands.setContent(newNote.content);
-      }
+    // If it's a newly selected note, load its data.
+    // If it's the SAME note, we ignore prop updates to avoid the
+    // async "echo" causing cursor jumps or reverting content while typing.
+    if (!isSameNote) {
+      editableTitle.value = newNote.title;
+      editor.value?.commands.setContent(newNote.content);
     }
   } else {
     editableTitle.value = '';
@@ -87,7 +86,15 @@ function setLink() {
   }
 
   // update
-  editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  if (editor.value?.state.selection.empty) {
+    editor.value
+      .chain()
+      .focus()
+      .insertContent(`<a href="${url}">${url}</a>`)
+      .run();
+  } else {
+    editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }
 }
 
 function onTrashClick() {
@@ -272,7 +279,7 @@ onBeforeUnmount(() => {
 }
 
 .ProseMirror a {
-    color: #4a90e2; /* Or match your theme color */
+    color: #4a90e2 !important; /* Or match your theme color */
     text-decoration: underline;
     cursor: pointer;
 }
