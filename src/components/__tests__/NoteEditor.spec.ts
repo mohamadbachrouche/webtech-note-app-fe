@@ -57,4 +57,31 @@ describe('NoteEditor.vue', () => {
     expect(wrapper.text()).toContain('Restore Note')
     expect(wrapper.text()).toContain('Delete Permanently')
   })
+
+  it('ignores content updates from props for the same note to prevent typing glitches', async () => {
+    const note = createMockNote({ id: 1, content: 'Initial Content' })
+    const wrapper = mount(NoteEditor, {
+      props: { selectedNote: null }
+    })
+
+    // 1. Load the note
+    await wrapper.setProps({ selectedNote: note })
+    await nextTick()
+    expect(wrapper.find('.ProseMirror').text()).toContain('Initial Content')
+
+    // 2. Simulare typing (local change) - logic is internal to Tiptap,
+    // but here we simulate an incoming prop update that might happen asynchronously
+    // e.g. "Initial Content" -> API -> "Initial Content" (delayed)
+    // while user typed "Initial Content Updated"
+
+    // We update prop with NEW content but SAME ID
+    const updatedNote = { ...note, content: 'External Update' }
+    await wrapper.setProps({ selectedNote: updatedNote })
+    await nextTick()
+
+    // 3. Expect editor content to REMAIN 'Initial Content' because ID is same
+    // (The watcher should ignore the update)
+    expect(wrapper.find('.ProseMirror').text()).toContain('Initial Content')
+    expect(wrapper.find('.ProseMirror').text()).not.toContain('External Update')
+  })
 })
