@@ -28,7 +28,7 @@ describe('NoteEditor.vue', () => {
   it('renders the editor when a note is selected', async () => {
     const note = createMockNote()
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null as any }
+      props: { selectedNote: null }
     })
 
     await wrapper.setProps({ selectedNote: note })
@@ -38,12 +38,16 @@ describe('NoteEditor.vue', () => {
     const titleInput = wrapper.find('.note-title-input')
     expect(titleInput.exists()).toBe(true)
     expect((titleInput.element as HTMLInputElement).value).toBe('Test Note')
+
+    // Check for Tiptap editor
+    expect(wrapper.find('.ProseMirror').exists()).toBe(true)
+    expect(wrapper.find('.ProseMirror').text()).toContain('Test Content')
   })
 
   it('renders trash options when a note is in trash', async () => {
     const note = createMockNote({ inTrash: true })
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null as any }
+      props: { selectedNote: null }
     })
 
     await wrapper.setProps({ selectedNote: note })
