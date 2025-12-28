@@ -15,6 +15,17 @@ const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delet
 
 // Local refs for editing
 const editableTitle = ref('');
+const titleError = ref('');
+
+// Validation function
+function validateTitle(): boolean {
+  if (!editableTitle.value.trim()) {
+    titleError.value = 'Title cannot be empty';
+    return false;
+  }
+  titleError.value = '';
+  return true;
+}
 
 // Tiptap Editor Setup
 const editor = useEditor({
@@ -51,6 +62,7 @@ watch(() => props.selectedNote, (newNote, oldNote) => {
     // async "echo" causing cursor jumps or reverting content while typing.
     if (!isSameNote) {
       editableTitle.value = newNote.title;
+      titleError.value = ''; // Clear validation error when switching notes
       editor.value?.commands.setContent(newNote.content);
     }
   } else {
@@ -62,6 +74,9 @@ watch(() => props.selectedNote, (newNote, oldNote) => {
 // Handle Title Updates separately
 function onTitleChange() {
   if (!props.selectedNote || props.selectedNote.inTrash) return;
+
+  // Validate title before saving
+  if (!validateTitle()) return;
 
   emit('update-note', {
     ...props.selectedNote,
@@ -147,9 +162,10 @@ onBeforeUnmount(() => {
           type="text"
           v-model="editableTitle"
           @input="onTitleChange"
-          class="note-title-input"
+          :class="['note-title-input', { 'input-error': titleError }]"
           placeholder="Note title"
         >
+        <span v-if="titleError" class="error-message">{{ titleError }}</span>
       </div>
 
       <div class="formatting-tools" v-if="editor">
@@ -282,5 +298,18 @@ onBeforeUnmount(() => {
     color: #4a90e2 !important; /* Or match your theme color */
     text-decoration: underline;
     cursor: pointer;
+}
+
+/* Validation Styles */
+.input-error {
+    border: 2px solid #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+.error-message {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: block;
 }
 </style>
