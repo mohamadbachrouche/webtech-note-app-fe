@@ -929,10 +929,13 @@ a:hover {
   .main-content {
     flex-direction: column;
     gap: 15px;
+    height: auto;
+    min-height: calc(100vh - var(--topbar-height) - 40px);
   }
 
   .app-container {
     padding: 15px;
+    overflow-y: auto;
   }
 
   .top-bar {
@@ -943,12 +946,16 @@ a:hover {
   .sidebar {
     width: 100%;
     height: auto;
-    max-height: 45%;
+    min-height: 200px;
+    max-height: 40vh;
     border-right: none;
+    flex-shrink: 0;
   }
 
   .note-content-area {
-    height: 55%;
+    flex: 1;
+    min-height: 50vh;
+    height: auto;
   }
 
   .note-editor {
@@ -1157,28 +1164,6 @@ a:hover {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  #sidebar-toggle {
-    display: flex;
-  }
-
-  .sidebar {
-    position: fixed;
-    left: -300px;
-    top: 0;
-    bottom: 0;
-    height: 100%;
-    z-index: 1000;
-    transition: left 0.3s ease;
-  }
-
-  .sidebar.visible {
-    left: 0;
-  }
-
-  .main-content {
-    flex-direction: column;
-  }
-
   .note-content-area {
     width: 100%;
   }
