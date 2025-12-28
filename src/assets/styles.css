@@ -1042,6 +1042,17 @@ a:hover {
   .note-editor {
     padding: 12px;
   }
+
+  /* Prevent auto-zoom on iOS by enforcing 16px font size on inputs */
+  .note-text-input-container,
+  .ProseMirror,
+  .ProseMirror p,
+  #search-input,
+  .tags-input,
+  #sort-select,
+  .note-title-input {
+    font-size: 16px !important;
+  }
 }
 
 /* Import/Export buttons */
