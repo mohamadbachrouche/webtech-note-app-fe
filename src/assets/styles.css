@@ -606,7 +606,16 @@ body {
   overflow: hidden; /* Ensure this container doesn't scroll whole body */
 }
 
+/* Back button hidden on desktop */
+.back-btn {
+  display: none;
+  margin-right: 12px;
+}
+
 .editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
@@ -614,20 +623,84 @@ body {
   border: none;
   font-size: 24px;
   font-weight: 600;
-  margin-bottom: 12px;
   background-color: transparent;
   color: var(--text-color);
-  width: 100%;
+  flex: 1; /* Allow input to take remaining space */
+  min-width: 0; /* Prevent flex overflow */
   padding: 0;
   letter-spacing: -0.02em;
 }
 
-.note-title-input:focus {
-  outline: none;
-  border: none;
-  box-shadow: none;
-}
+/* Responsive */
+@media (max-width: 768px) {
+  /* Show back button on mobile */
+  .back-btn {
+    display: flex;
+  }
 
+  .main-content {
+    /* Remove the column direction and gap that caused stacking */
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    height: calc(100vh - var(--topbar-height) - 30px); /* Adjust height calculation */
+    /* Use dvh if supported for better mobile experience */
+    height: calc(100dvh - var(--topbar-height) - 30px);
+    overflow: hidden;
+  }
+
+  .app-container {
+    padding: 10px; /* Reduce padding on mobile */
+    height: 100dvh;
+    overflow: hidden; /* stop body scroll */
+  }
+
+  .top-bar {
+    margin-bottom: 10px;
+    height: 50px;
+    padding: 0 16px;
+  }
+
+  /* Default State: Show Sidebar, Hide Editor */
+  .sidebar {
+    width: 100%;
+    height: 100%;
+    max-height: none; /* Remove previous max-height limit */
+    border-right: none;
+    display: flex;
+  }
+
+  .note-content-area {
+    display: none; /* Hidden by default */
+    width: 100%;
+    height: 100%;
+    min-height: 0; /* Remove min-height */
+  }
+
+  /* Active State (Note Selected): Hide Sidebar, Show Editor */
+  .app-container.has-selected-note .sidebar {
+    display: none;
+  }
+
+  .app-container.has-selected-note .note-content-area {
+    display: flex;
+  }
+
+  .note-editor {
+    padding: 16px;
+  }
+
+  .note-title-input {
+    font-size: 20px;
+  }
+
+  .formatting-tools {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 .note-tags {
   display: flex;
   flex-wrap: wrap;
@@ -925,63 +998,9 @@ a:hover {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column;
-    gap: 15px;
-    height: auto;
-    min-height: calc(100vh - var(--topbar-height) - 40px);
-  }
-
-  .app-container {
-    padding: 15px;
-    overflow-y: auto;
-  }
-
-  .top-bar {
-    margin-bottom: 15px;
-    height: 50px;
-  }
-
-  .sidebar {
-    width: 100%;
-    height: auto;
-    min-height: 200px;
-    max-height: 40vh;
-    border-right: none;
-    flex-shrink: 0;
-  }
-
-  .note-content-area {
-    flex: 1;
-    min-height: 50vh;
-    height: auto;
-  }
-
-  .note-editor {
-    padding: 16px;
-  }
-
-  .note-title-input {
-    font-size: 20px;
-    margin-bottom: 10px;
-  }
-
-  .formatting-tools {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 10px;
-  }
-}
+/* Old media query removed and replaced in previous step */
 
 @media (max-width: 480px) {
-  .sidebar {
-    max-height: 40%;
-  }
-
-  .note-content-area {
-    height: 60%;
-  }
 
   .sidebar-actions {
     flex-direction: column;

@@ -11,7 +11,7 @@ const props = defineProps<{
   selectedNote: Note | null
 }>();
 
-const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delete-permanently']);
+const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delete-permanently', 'back']);
 
 // Local refs for editing
 const editableTitle = ref('');
@@ -158,6 +158,9 @@ onBeforeUnmount(() => {
 
     <div v-else-if="selectedNote && !selectedNote.inTrash" class="note-editor">
       <div class="editor-header">
+        <button class="icon-btn back-btn" @click="emit('back')" title="Back to list">
+          <i class="fas fa-arrow-left"></i>
+        </button>
         <input
           type="text"
           v-model="editableTitle"

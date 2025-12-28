@@ -173,7 +173,7 @@ onMounted(async () => {
   <div class="bg-image" :style="{ backgroundImage: `url(${BACKGROUND_THEMES[currentThemeColor]})` }"></div>
   <div class="bg-overlay"></div>
 
-  <div class="app-container" :class="{ 'dark-theme': isDarkMode }">
+  <div class="app-container" :class="{ 'dark-theme': isDarkMode, 'has-selected-note': selectedNoteId !== null }">
     <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" :current-theme="currentThemeColor" />
     <div class="main-content">
       <Sidebar
@@ -191,6 +191,7 @@ onMounted(async () => {
         @move-to-trash="handleMoveToTrash"
         @restore-note="handleRestoreNote"
         @delete-permanently="handleDeletePermanently"
+        @back="selectedNoteId = null"
       />
     </div>
   </div>
