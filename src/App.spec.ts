@@ -30,11 +30,12 @@ describe('App.vue Background Theme', () => {
     })
   })
 
-  it('initializes with default blue theme', async () => {
+  it('initializes with default green theme', async () => {
     const wrapper = mount(App)
     await nextTick()
     const bgImage = wrapper.find('.bg-image')
-    expect(bgImage.attributes('style')).toContain('https://images.unsplash.com/photo-1519681393784-d120267933ba')
+    // Green theme URL from constants.ts
+    expect(bgImage.attributes('style')).toContain('https://mcdn.wallpapersafari.com/medium/34/82/0OWTQ5.jpg')
   })
 
   it('loads saved theme from localStorage on mount', async () => {

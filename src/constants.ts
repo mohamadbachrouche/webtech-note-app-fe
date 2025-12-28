@@ -15,4 +15,4 @@ export const BACKGROUND_THEMES: Record<string, string> = {
 /**
  * Default theme color
  */
-export const DEFAULT_THEME_COLOR = 'blue';
+export const DEFAULT_THEME_COLOR = 'green';
