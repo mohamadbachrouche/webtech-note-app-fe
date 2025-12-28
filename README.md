@@ -1,63 +1,104 @@
 # Webtech Note App - Frontend
 
-This repository contains the **Vue.js frontend** for the note-taking application developed for the Web Technologies course (Wintersemester 2025/26) at HTW Berlin.
+A modern, responsive note-taking application built with **Vue.js 3** and **TypeScript** for the Web Technologies course (WiSe 2025/26) at HTW Berlin.
 
-It provides the user interface and communicates with the backend API.
+## 🌐 Live Demo
 
-**Backend:** https://github.com/mohamadbachrouche/webtech-note-app-be
+- **Frontend:** https://webtech-note-app-fe.onrender.com
+- **Backend:** https://webtech-note-app-be.onrender.com
+- **Backend Repository:** https://github.com/mohamadbachrouche/webtech-note-app-be
 
+## ✨ Features
 
-# .
+- **Create, Edit & Delete Notes** - Full CRUD functionality with rich text editing
+- **Rich Text Editor** - Bold, italic, underline, headings, lists, and hyperlinks (powered by Tiptap)
+- **Pin Notes** - Keep important notes at the top
+- **Trash & Restore** - Soft delete with recovery option
+- **Search & Sort** - Filter notes by title, sort by date or alphabetically
+- **Dark Mode** - Toggle between light and dark themes
+- **Background Themes** - Choose from multiple background images
+- **Responsive Design** - Works on desktop and mobile devices
 
-This template should help get you started developing with Vue 3 in Vite.
+## 🛠️ Tech Stack
 
-## Recommended IDE Setup
+| Category         | Technology                 |
+| ---------------- | -------------------------- |
+| Framework        | Vue.js 3 (Composition API) |
+| Language         | TypeScript                 |
+| Build Tool       | Vite                       |
+| Testing          | Vitest                     |
+| HTTP Client      | Axios                      |
+| Rich Text Editor | Tiptap                     |
+| Deployment       | Render.com (Static Site)   |
+| CI/CD            | GitHub Actions             |
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+## 📦 Project Setup
 
 ```sh
 npm install
 ```
 
-### Compile and Hot-Reload for Development
+### Development Server
 
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+### Production Build
 
 ```sh
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+### Run Unit Tests
 
 ```sh
 npm run test:unit
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Type Check
+
+```sh
+npm run type-check
+```
+
+### Lint & Format
 
 ```sh
 npm run lint
+npm run format
 ```
+
+## 📁 Project Structure
+
+```
+src/
+├── components/          # Vue components
+│   ├── NoteEditor.vue   # Rich text editor
+│   ├── NoteItem.vue     # Note list item
+│   ├── SideBar.vue      # Navigation & note list
+│   └── TopBar.vue       # Header & theme controls
+├── services/            # API service layer
+├── types/               # TypeScript interfaces
+├── constants.ts         # App configuration
+├── App.vue              # Root component
+└── main.ts              # Entry point
+```
+
+## 🔧 Environment Variables
+
+Create `.env.development` for local development:
+
+```
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+Production uses `.env.production`:
+
+```
+VITE_API_BASE_URL=https://webtech-note-app-be.onrender.com/api
+```
+
+## 👨‍💻 Author
+
+Mohamad Bachrouche - HTW Berlin
