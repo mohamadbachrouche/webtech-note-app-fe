@@ -1003,9 +1003,19 @@ a:hover {
 @media (max-width: 480px) {
 
   .sidebar-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
     gap: 10px;
+  }
+
+  /* Make sort container grow to fill space if desired, or just align nicely */
+  .sort-container {
+    flex: 1;
+  }
+
+  /* Ensure sort select takes full width of its container */
+  #sort-select {
+    width: 100%;
   }
 
   .note-title-input {

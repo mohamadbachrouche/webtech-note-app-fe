@@ -12,7 +12,7 @@ const allNotes = ref<Note[]>([]);
 const selectedNoteId = ref<number | null>(null);
 const currentView = ref<'notes' | 'trash'>('notes');
 const isDarkMode = ref(false);
-const currentThemeColor = ref('blue');
+const currentThemeColor = ref('green');
 const isLoading = ref(false);
 const errorMessage = ref('');
 
