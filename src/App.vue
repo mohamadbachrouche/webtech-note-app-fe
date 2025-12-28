@@ -5,12 +5,7 @@ import Sidebar from './components/SideBar.vue' // Corrected this to SideBar
 import NoteEditor from './components/NoteEditor.vue'
 import type { Note } from './types'
 import * as ApiService from './services/ApiService'
-
-const BACKGROUND_THEMES: Record<string, string> = {
-  blue: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-  yellow: 'https://wallpapercave.com/wp/wp11276048.jpg',
-  green: 'https://mcdn.wallpapersafari.com/medium/34/82/0OWTQ5.jpg'
-};
+import { BACKGROUND_THEMES } from './constants'
 
 // --- 1. DEFINE ALL STATE REFS FIRST ---
 const allNotes = ref<Note[]>([]);
@@ -18,6 +13,8 @@ const selectedNoteId = ref<number | null>(null);
 const currentView = ref<'notes' | 'trash'>('notes');
 const isDarkMode = ref(false);
 const currentThemeColor = ref('blue');
+const isLoading = ref(false);
+const errorMessage = ref('');
 
 // --- 2. DEFINE ALL FUNCTIONS SECOND ---
 function setTheme(dark: boolean) {
@@ -37,6 +34,8 @@ function setAppBackground(color: string) {
 }
 
 async function loadNotes() {
+  isLoading.value = true;
+  errorMessage.value = '';
   try {
     let response;
     if (currentView.value === 'notes') {
@@ -47,7 +46,15 @@ async function loadNotes() {
     allNotes.value = response.data;
   } catch (error) {
     console.error('Failed to fetch notes:', error);
+    errorMessage.value = 'Failed to load notes. Please try again.';
+  } finally {
+    isLoading.value = false;
   }
+}
+
+function showError(message: string) {
+  errorMessage.value = message;
+  setTimeout(() => { errorMessage.value = ''; }, 5000);
 }
 
 function handleSelectNote(id: number) {
@@ -62,6 +69,7 @@ async function handleAddNewNote() {
     selectedNoteId.value = response.data.id;
   } catch (error) {
     console.error('Failed to create note:', error);
+    showError('Failed to create note. Please try again.');
   }
 }
 
@@ -74,6 +82,7 @@ async function handleUpdateNote(noteToUpdate: Note) {
     }
   } catch (error) {
     console.error('Failed to update note:', error);
+    showError('Failed to save note. Please try again.');
   }
 }
 
@@ -84,6 +93,7 @@ async function handleMoveToTrash(noteId: number) {
     await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to move note to trash:', error);
+    showError('Failed to move note to trash.');
   }
 }
 
@@ -94,6 +104,7 @@ async function handleRestoreNote(noteId: number) {
     await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to restore note:', error);
+    showError('Failed to restore note.');
   }
 }
 
@@ -104,6 +115,7 @@ async function handleDeletePermanently(noteId: number) {
     await loadNotes(); // Reload the list
   } catch (error) {
     console.error('Failed to permanently delete note:', error);
+    showError('Failed to delete note.');
   }
 }
 
@@ -147,6 +159,17 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- Loading Overlay -->
+  <div v-if="isLoading" class="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- Error Toast -->
+  <div v-if="errorMessage" class="error-toast">
+    <span>{{ errorMessage }}</span>
+    <button @click="errorMessage = ''" class="toast-close">&times;</button>
+  </div>
+
   <div class="bg-image" :style="{ backgroundImage: `url(${BACKGROUND_THEMES[currentThemeColor]})` }"></div>
   <div class="bg-overlay"></div>
 
