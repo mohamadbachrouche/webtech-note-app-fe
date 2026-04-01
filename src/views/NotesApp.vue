@@ -13,6 +13,7 @@ const selectedNoteId = ref<number | null>(null);
 const currentView = ref<'notes' | 'trash'>('notes');
 const isDarkMode = ref(false);
 const currentThemeColor = ref('green');
+const sidebarCollapsed = ref(false);
 const isLoading = ref(false);
 const errorMessage = ref('');
 
@@ -24,6 +25,11 @@ function setTheme(dark: boolean) {
 
 function toggleTheme() {
   setTheme(!isDarkMode.value);
+}
+
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value ? 'true' : 'false');
 }
 
 function setAppBackground(color: string) {
@@ -153,6 +159,12 @@ onMounted(async () => {
     img.src = url;
   });
 
+  // Load sidebar state
+  const savedSidebar = localStorage.getItem('sidebarCollapsed');
+  if (savedSidebar === 'true') {
+    sidebarCollapsed.value = true;
+  }
+
   // Load initial notes
   await loadNotes();
 });
@@ -175,7 +187,14 @@ onMounted(async () => {
 
   <div class="app-container" :class="{ 'dark-theme': isDarkMode, 'has-selected-note': selectedNoteId !== null }">
     <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" :current-theme="currentThemeColor" />
-    <div class="main-content">
+    <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+      <button
+        class="icon-btn sidebar-toggle-btn"
+        :title="sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'"
+        @click="toggleSidebar"
+      >
+        <i class="fas" :class="sidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'"></i>
+      </button>
       <Sidebar
         :pinned-notes="pinnedNotes"
         :regular-notes="regularNotes"
