@@ -40,3 +40,9 @@ export const restoreNote = (id: number) => {
 export const deleteNotePermanently = (id: number) => {
   return apiClient.delete(`/notes/permanent/${id}`);
 }
+
+export const downloadNoteAsPdf = (id: number) => {
+  return apiClient.get(`/notes/${id}/download/pdf`, {
+    responseType: 'blob'
+  });
+}

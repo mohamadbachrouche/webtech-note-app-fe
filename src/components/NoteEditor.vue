@@ -2,6 +2,7 @@
 import type { Note } from '@/types';
 import { ref, watch, onBeforeUnmount } from 'vue';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
+import { downloadNoteAsPdf } from '@/services/ApiService';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -16,6 +17,7 @@ const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delet
 // Local refs for editing
 const editableTitle = ref('');
 const titleError = ref('');
+const isDownloading = ref(false);
 
 // Validation function
 function validateTitle(): boolean {
@@ -138,6 +140,28 @@ function onPinClick() {
   });
 }
 
+async function onDownloadClick() {
+  if (!props.selectedNote || isDownloading.value) return;
+  isDownloading.value = true;
+  try {
+    const response = await downloadNoteAsPdf(props.selectedNote.id);
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const sanitizedTitle = props.selectedNote.title.replace(/[^a-zA-Z0-9_\- ]/g, '');
+    link.download = `${sanitizedTitle || 'note'}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Failed to download note as PDF:', error);
+  } finally {
+    isDownloading.value = false;
+  }
+}
+
 onBeforeUnmount(() => {
   editor.value?.destroy();
 });
@@ -233,6 +257,15 @@ onBeforeUnmount(() => {
 
         <div class="flex-spacer"></div>
 
+        <button
+          id="download-btn"
+          class="icon-btn"
+          :disabled="isDownloading"
+          title="Download as PDF"
+          @click="onDownloadClick"
+        >
+          <i :class="isDownloading ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+        </button>
         <button
           id="pin-btn"
           class="icon-btn pin-btn"
