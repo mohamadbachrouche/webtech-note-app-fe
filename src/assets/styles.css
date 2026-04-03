@@ -824,6 +824,13 @@ body {
   outline: none;
 }
 
+.editor-status-bar {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--secondary-text);
+  padding: 4px 8px;
+}
+
 [contenteditable='true']:empty:before {
   content: attr(placeholder);
   color: var(--secondary-text);

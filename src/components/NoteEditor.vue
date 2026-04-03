@@ -6,6 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import CharacterCount from '@tiptap/extension-character-count';
 
 const props = defineProps<{
   selectedNote: Note | null
@@ -39,6 +40,7 @@ const editor = useEditor({
     Placeholder.configure({
       placeholder: 'Start typing...',
     }),
+    CharacterCount,
   ],
   onUpdate: ({ editor }) => {
     if (!props.selectedNote || props.selectedNote.inTrash) return;
@@ -248,6 +250,9 @@ onBeforeUnmount(() => {
       </div>
 
       <editor-content :editor="editor" class="note-text-input-container" />
+      <div v-if="editor" class="editor-status-bar">
+        {{ editor.storage.characterCount.words() }} words · {{ editor.storage.characterCount.characters() }} characters
+      </div>
     </div>
 
     <div v-else class="empty-state-message" id="empty-state">
