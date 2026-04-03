@@ -1,69 +1,78 @@
 <script setup lang="ts">
-import type { Note } from '@/types';
-import { ref, watch, computed, onBeforeUnmount } from 'vue';
-import { useEditor, EditorContent } from '@tiptap/vue-3';
-import { downloadNoteAsPdf } from '@/services/ApiService';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import CharacterCount from '@tiptap/extension-character-count';
+import type { Note } from '@/types'
+import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { downloadNoteAsPdf } from '@/services/ApiService'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import CharacterCount from '@tiptap/extension-character-count'
 
 const props = defineProps<{
   selectedNote: Note | null
-}>();
+}>()
 
-const copied = ref(false);
+const copied = ref(false)
+const noteColorOptions = ['', '#ef4444', '#f97316', '#3b82f6', '#22c55e', '#a855f7']
 
 async function copyToClipboard() {
-  const text = editor.value?.getText() ?? '';
+  const text = editor.value?.getText() ?? ''
   try {
     if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text)
     } else {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.style.position = 'fixed';
-      textarea.style.opacity = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
     }
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 2000);
+    copied.value = true
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
   } catch {
     // Copy failed silently
   }
 }
 
-const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delete-permanently', 'back']);
+const emit = defineEmits([
+  'update-note',
+  'move-to-trash',
+  'restore-note',
+  'delete-permanently',
+  'back',
+])
 
-const dateFormatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+const dateFormatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
 
 const formattedCreatedAt = computed(() => {
-  if (!props.selectedNote) return '';
-  return dateFormatter.format(new Date(props.selectedNote.createdAt));
-});
+  if (!props.selectedNote) return ''
+  return dateFormatter.format(new Date(props.selectedNote.createdAt))
+})
 
 const formattedLastModified = computed(() => {
-  if (!props.selectedNote) return '';
-  return dateFormatter.format(new Date(props.selectedNote.lastModified));
-});
+  if (!props.selectedNote) return ''
+  return dateFormatter.format(new Date(props.selectedNote.lastModified))
+})
 
 // Local refs for editing
-const editableTitle = ref('');
-const titleError = ref('');
-const isDownloading = ref(false);
+const editableTitle = ref('')
+const titleError = ref('')
+const isDownloading = ref(false)
 
 // Validation function
 function validateTitle(): boolean {
   if (!editableTitle.value.trim()) {
-    titleError.value = 'Title cannot be empty';
-    return false;
+    titleError.value = 'Title cannot be empty'
+    return false
   }
-  titleError.value = '';
-  return true;
+  titleError.value = ''
+  return true
 }
 
 // Tiptap Editor Setup
@@ -81,128 +90,135 @@ const editor = useEditor({
     CharacterCount,
   ],
   onUpdate: ({ editor }) => {
-    if (!props.selectedNote || props.selectedNote.inTrash) return;
+    if (!props.selectedNote || props.selectedNote.inTrash) return
 
     // Emit update on every change
     emit('update-note', {
       ...props.selectedNote,
       title: editableTitle.value,
       content: editor.getHTML(),
-    });
+    })
   },
-});
+})
 
 // Watch for selectedNote changes to update editor content
-watch(() => props.selectedNote, (newNote, oldNote) => {
-  if (newNote) {
-    const isSameNote = oldNote && oldNote.id === newNote.id;
+watch(
+  () => props.selectedNote,
+  (newNote, oldNote) => {
+    if (newNote) {
+      const isSameNote = oldNote && oldNote.id === newNote.id
 
-    // If it's a newly selected note, load its data.
-    // If it's the SAME note, we ignore prop updates to avoid the
-    // async "echo" causing cursor jumps or reverting content while typing.
-    if (!isSameNote) {
-      editableTitle.value = newNote.title;
-      titleError.value = ''; // Clear validation error when switching notes
-      editor.value?.commands.setContent(newNote.content);
+      // If it's a newly selected note, load its data.
+      // If it's the SAME note, we ignore prop updates to avoid the
+      // async "echo" causing cursor jumps or reverting content while typing.
+      if (!isSameNote) {
+        editableTitle.value = newNote.title
+        titleError.value = '' // Clear validation error when switching notes
+        editor.value?.commands.setContent(newNote.content)
+      }
+    } else {
+      editableTitle.value = ''
+      editor.value?.commands.setContent('')
     }
-  } else {
-    editableTitle.value = '';
-    editor.value?.commands.setContent('');
-  }
-});
+  },
+)
 
 // Handle Title Updates separately
 function onTitleChange() {
-  if (!props.selectedNote || props.selectedNote.inTrash) return;
+  if (!props.selectedNote || props.selectedNote.inTrash) return
 
   // Validate title before saving
-  if (!validateTitle()) return;
+  if (!validateTitle()) return
 
   emit('update-note', {
     ...props.selectedNote,
     title: editableTitle.value,
     content: editor.value?.getHTML() || '',
-  });
+  })
 }
 
 function setLink() {
-  const previousUrl = editor.value?.getAttributes('link').href;
-  const url = window.prompt('URL', previousUrl);
+  const previousUrl = editor.value?.getAttributes('link').href
+  const url = window.prompt('URL', previousUrl)
 
   // cancelled
   if (url === null) {
-    return;
+    return
   }
 
   // empty
   if (url === '') {
-    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run();
-    return;
+    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run()
+    return
   }
 
   // update
   if (editor.value?.state.selection.empty) {
-    editor.value
-      .chain()
-      .focus()
-      .insertContent(`<a href="${url}">${url}</a>`)
-      .run();
+    editor.value.chain().focus().insertContent(`<a href="${url}">${url}</a>`).run()
   } else {
-    editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
 }
 
 function onTrashClick() {
   if (props.selectedNote) {
-    emit('move-to-trash', props.selectedNote.id);
+    emit('move-to-trash', props.selectedNote.id)
   }
 }
 
 function onRestoreClick() {
   if (props.selectedNote) {
-    emit('restore-note', props.selectedNote.id);
+    emit('restore-note', props.selectedNote.id)
   }
 }
 
 function onDeleteClick() {
   if (props.selectedNote) {
-    emit('delete-permanently', props.selectedNote.id);
+    emit('delete-permanently', props.selectedNote.id)
   }
 }
 
 function onPinClick() {
-  if (!props.selectedNote || props.selectedNote.inTrash) return;
+  if (!props.selectedNote || props.selectedNote.inTrash) return
   emit('update-note', {
     ...props.selectedNote,
-    pinned: !props.selectedNote.pinned
-  });
+    pinned: !props.selectedNote.pinned,
+  })
+}
+
+function onColorSelect(chosenColor: string) {
+  if (!props.selectedNote || props.selectedNote.inTrash) return
+  emit('update-note', {
+    ...props.selectedNote,
+    color: chosenColor,
+  })
 }
 
 async function onDownloadClick() {
-  if (!props.selectedNote || isDownloading.value) return;
-  isDownloading.value = true;
+  if (!props.selectedNote || isDownloading.value) return
+  isDownloading.value = true
   try {
-    const response = await downloadNoteAsPdf(props.selectedNote.id);
-    const blob = new Blob([response.data], { type: 'application/pdf' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const sanitizedTitle = props.selectedNote.title.replace(/[^a-zA-Z0-9_\- ]/g, '');
-    link.download = `${sanitizedTitle || 'note'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    const response = await downloadNoteAsPdf(props.selectedNote.id)
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const sanitizedTitle = props.selectedNote.title.replace(/[^a-zA-Z0-9_\- ]/g, '')
+    link.download = `${sanitizedTitle || 'note'}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('Failed to download note as PDF:', error);
+    console.error('Failed to download note as PDF:', error)
   } finally {
-    isDownloading.value = false;
+    isDownloading.value = false
   }
 }
 
 onBeforeUnmount(() => {
-  editor.value?.destroy();
-});
+  editor.value?.destroy()
+})
 </script>
 
 <template>
@@ -229,7 +245,7 @@ onBeforeUnmount(() => {
           @input="onTitleChange"
           :class="['note-title-input', { 'input-error': titleError }]"
           placeholder="Note title"
-        >
+        />
         <span v-if="titleError" class="error-message">{{ titleError }}</span>
       </div>
 
@@ -329,6 +345,21 @@ onBeforeUnmount(() => {
         >
           <i class="fas fa-thumbtack"></i>
         </button>
+        <div class="color-picker" aria-label="Note color picker">
+          <button
+            v-for="color in noteColorOptions"
+            :key="color || 'none'"
+            type="button"
+            class="color-picker-swatch"
+            :class="{
+              active: (selectedNote.color || '') === color,
+              none: color === '',
+            }"
+            :style="color ? { backgroundColor: color } : {}"
+            :title="color ? `Set note color ${color}` : 'Clear note color'"
+            @click="onColorSelect(color)"
+          ></button>
+        </div>
         <button @click="onTrashClick" id="trash-btn" class="icon-btn" title="Move to Trash">
           <i class="fas fa-trash"></i>
         </button>
@@ -336,7 +367,8 @@ onBeforeUnmount(() => {
 
       <editor-content :editor="editor" class="note-text-input-container" />
       <div v-if="editor" class="editor-status-bar">
-        {{ editor.storage.characterCount.words() }} words · {{ editor.storage.characterCount.characters() }} characters
+        {{ editor.storage.characterCount.words() }} words ·
+        {{ editor.storage.characterCount.characters() }} characters
       </div>
     </div>
 
@@ -353,9 +385,9 @@ onBeforeUnmount(() => {
 <style>
 /* Basic Tiptap / ProseMirror Styles */
 .ProseMirror {
-    outline: none;
-    min-height: 200px; /* Ensure there is clickable area */
-    color: var(--text-color);
+  outline: none;
+  min-height: 200px; /* Ensure there is clickable area */
+  color: var(--text-color);
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -368,41 +400,41 @@ onBeforeUnmount(() => {
 
 .ProseMirror ul,
 .ProseMirror ol {
-    padding-left: 1.5rem;
-    margin: 1rem 0;
+  padding-left: 1.5rem;
+  margin: 1rem 0;
 }
 
 .ProseMirror ul {
-    list-style-type: disc;
+  list-style-type: disc;
 }
 .ProseMirror ol {
-    list-style-type: decimal;
+  list-style-type: decimal;
 }
 
 .ProseMirror h1,
 .ProseMirror h2,
 .ProseMirror h3 {
-    line-height: 1.2;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
+  line-height: 1.2;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .ProseMirror a {
-    color: #4a90e2 !important; /* Or match your theme color */
-    text-decoration: underline;
-    cursor: pointer;
+  color: #4a90e2 !important; /* Or match your theme color */
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* Validation Styles */
 .input-error {
-    border: 2px solid #dc3545 !important;
-    background-color: rgba(220, 53, 69, 0.05) !important;
+  border: 2px solid #dc3545 !important;
+  background-color: rgba(220, 53, 69, 0.05) !important;
 }
 
 .error-message {
-    color: #dc3545;
-    font-size: 0.85rem;
-    margin-top: 0.25rem;
-    display: block;
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: block;
 }
 </style>

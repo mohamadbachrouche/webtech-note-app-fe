@@ -8,6 +8,7 @@ const createMockNote = (overrides: Partial<Note> = {}): Note => ({
   id: 1,
   title: 'Test Note',
   content: '<p>This is some <strong>bold</strong> content.</p>',
+  color: '',
   tags: '',
   pinned: false,
   inTrash: false,

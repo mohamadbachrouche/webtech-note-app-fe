@@ -853,6 +853,37 @@ body {
   flex-grow: 1;
 }
 
+.color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-picker-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.color-picker-swatch:hover {
+  transform: scale(1.08);
+}
+
+.color-picker-swatch.none {
+  background: var(--content-bg);
+  border-color: var(--border-color);
+}
+
+.color-picker-swatch.active {
+  outline: 2px solid var(--item-active-border);
+  outline-offset: 2px;
+}
+
 .note-text-input {
   flex: 1;
   border: none;
@@ -1062,7 +1093,6 @@ a:hover {
 /* Old media query removed and replaced in previous step */
 
 @media (max-width: 480px) {
-
   .sidebar-actions {
     flex-direction: row;
     align-items: center;

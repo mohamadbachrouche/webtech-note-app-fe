@@ -8,6 +8,7 @@ const createMockNote = (overrides: Partial<Note> = {}): Note => ({
   id: 1,
   title: 'Test Note',
   content: 'Test Content',
+  color: '',
   tags: '',
   pinned: false,
   inTrash: false,
@@ -19,7 +20,7 @@ const createMockNote = (overrides: Partial<Note> = {}): Note => ({
 describe('NoteEditor.vue', () => {
   it('renders the empty state when no note is selected', () => {
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null }
+      props: { selectedNote: null },
     })
     expect(wrapper.find('#empty-state').exists()).toBe(true)
     expect(wrapper.text()).toContain('No Note Selected')
@@ -28,7 +29,7 @@ describe('NoteEditor.vue', () => {
   it('renders the editor when a note is selected', async () => {
     const note = createMockNote()
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null }
+      props: { selectedNote: null },
     })
 
     await wrapper.setProps({ selectedNote: note })
@@ -47,7 +48,7 @@ describe('NoteEditor.vue', () => {
   it('renders trash options when a note is in trash', async () => {
     const note = createMockNote({ inTrash: true })
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null }
+      props: { selectedNote: null },
     })
 
     await wrapper.setProps({ selectedNote: note })
@@ -61,7 +62,7 @@ describe('NoteEditor.vue', () => {
   it('ignores content updates from props for the same note to prevent typing glitches', async () => {
     const note = createMockNote({ id: 1, content: 'Initial Content' })
     const wrapper = mount(NoteEditor, {
-      props: { selectedNote: null }
+      props: { selectedNote: null },
     })
 
     // 1. Load the note

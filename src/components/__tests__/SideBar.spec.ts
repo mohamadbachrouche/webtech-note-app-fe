@@ -8,6 +8,7 @@ const createMockNote = (id: number, title: string, content: string = ''): Note =
   id,
   title,
   content,
+  color: '',
   tags: '',
   pinned: false,
   inTrash: false,

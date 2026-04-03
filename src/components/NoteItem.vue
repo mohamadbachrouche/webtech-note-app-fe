@@ -1,34 +1,40 @@
 <!-- src/components/NoteItem.vue -->
 <script setup lang="ts">
-import type { Note } from '@/types';
-import { computed } from 'vue';
+import type { Note } from '@/types'
+import { computed } from 'vue'
 
 const props = defineProps<{
   note: Note
-}>();
+}>()
 
 const preview = computed(() => {
-  const stripped = props.note.content.replace(/<[^>]+>/g, '');
-  if (stripped.length <= 40) return stripped;
-  return stripped.substring(0, 40) + '...';
-});
+  const stripped = props.note.content.replace(/<[^>]+>/g, '')
+  if (stripped.length <= 40) return stripped
+  return stripped.substring(0, 40) + '...'
+})
 
 const formattedDate = computed(() => {
-  const date = new Date(props.note.lastModified);
-  const today = new Date();
+  const date = new Date(props.note.lastModified)
+  const today = new Date()
   if (date.toDateString() === today.toDateString()) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-});
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+})
 
 const formattedLastModified = computed(() => {
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(props.note.lastModified));
-});
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(
+    new Date(props.note.lastModified),
+  )
+})
 </script>
 
 <template>
-  <div class="note-item" :class="{ pinned: note.pinned }">
+  <div
+    class="note-item"
+    :class="{ pinned: note.pinned }"
+    :style="note.color ? { borderLeft: '4px solid ' + note.color } : {}"
+  >
     <div class="note-item-title">{{ note.title }}</div>
     <div class="note-item-subtitle">Modified: {{ formattedLastModified }}</div>
     <div class="note-item-preview">{{ preview }}</div>

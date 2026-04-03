@@ -8,204 +8,208 @@ import * as ApiService from '@/services/ApiService'
 import { BACKGROUND_THEMES } from '@/constants'
 
 // --- 1. DEFINE ALL STATE REFS FIRST ---
-const allNotes = ref<Note[]>([]);
-const selectedNoteId = ref<number | null>(null);
-const currentView = ref<'notes' | 'trash'>('notes');
-const isDarkMode = ref(false);
-const currentThemeColor = ref('green');
-const sidebarCollapsed = ref(false);
-const isLoading = ref(false);
-const errorMessage = ref('');
+const allNotes = ref<Note[]>([])
+const selectedNoteId = ref<number | null>(null)
+const currentView = ref<'notes' | 'trash'>('notes')
+const isDarkMode = ref(false)
+const currentThemeColor = ref('green')
+const sidebarCollapsed = ref(false)
+const isLoading = ref(false)
+const errorMessage = ref('')
 
 // --- 2. DEFINE ALL FUNCTIONS SECOND ---
 function setTheme(dark: boolean) {
-  isDarkMode.value = dark;
-  localStorage.setItem('darkMode', dark ? 'true' : 'false');
+  isDarkMode.value = dark
+  localStorage.setItem('darkMode', dark ? 'true' : 'false')
 }
 
 function toggleTheme() {
-  setTheme(!isDarkMode.value);
+  setTheme(!isDarkMode.value)
 }
 
 function toggleSidebar() {
-  sidebarCollapsed.value = !sidebarCollapsed.value;
-  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value ? 'true' : 'false');
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value ? 'true' : 'false')
 }
 
 function setAppBackground(color: string) {
   if (color in BACKGROUND_THEMES) {
-    currentThemeColor.value = color;
-    localStorage.setItem('appBackground', color);
+    currentThemeColor.value = color
+    localStorage.setItem('appBackground', color)
   }
 }
 
 async function loadNotes() {
-  isLoading.value = true;
-  errorMessage.value = '';
+  isLoading.value = true
+  errorMessage.value = ''
   try {
-    let response;
+    let response
     if (currentView.value === 'notes') {
-      response = await ApiService.getActiveNotes();
+      response = await ApiService.getActiveNotes()
     } else {
-      response = await ApiService.getTrashedNotes();
+      response = await ApiService.getTrashedNotes()
     }
-    allNotes.value = response.data;
+    allNotes.value = response.data
   } catch (error) {
-    console.error('Failed to fetch notes:', error);
-    errorMessage.value = 'Failed to load notes. Please try again.';
+    console.error('Failed to fetch notes:', error)
+    errorMessage.value = 'Failed to load notes. Please try again.'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 
 function showError(message: string) {
-  errorMessage.value = message;
-  setTimeout(() => { errorMessage.value = ''; }, 5000);
+  errorMessage.value = message
+  setTimeout(() => {
+    errorMessage.value = ''
+  }, 5000)
 }
 
 function handleSelectNote(id: number) {
-  selectedNoteId.value = id;
+  selectedNoteId.value = id
 }
 
 async function handleAddNewNote() {
-  const newNoteData = { title: 'New Note', content: '', tags: '' };
+  const newNoteData = { title: 'New Note', content: '', color: '', tags: '' }
   try {
-    const response = await ApiService.createNote(newNoteData);
-    await loadNotes(); // Reload the list from the server
-    selectedNoteId.value = response.data.id;
+    const response = await ApiService.createNote(newNoteData)
+    await loadNotes() // Reload the list from the server
+    selectedNoteId.value = response.data.id
   } catch (error) {
-    console.error('Failed to create note:', error);
-    showError('Failed to create note. Please try again.');
+    console.error('Failed to create note:', error)
+    showError('Failed to create note. Please try again.')
   }
 }
 
 async function handleUpdateNote(noteToUpdate: Note) {
   try {
-    const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate);
-    const index = allNotes.value.findIndex(n => n.id === response.data.id);
+    const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate)
+    const index = allNotes.value.findIndex((n) => n.id === response.data.id)
     if (index !== -1) {
-      allNotes.value[index] = response.data;
+      allNotes.value[index] = response.data
     }
   } catch (error) {
-    console.error('Failed to update note:', error);
-    showError('Failed to save note. Please try again.');
+    console.error('Failed to update note:', error)
+    showError('Failed to save note. Please try again.')
   }
 }
 
 async function handleMoveToTrash(noteId: number) {
   try {
-    await ApiService.moveToTrash(noteId);
-    selectedNoteId.value = null;
-    await loadNotes(); // Reload the list
+    await ApiService.moveToTrash(noteId)
+    selectedNoteId.value = null
+    await loadNotes() // Reload the list
   } catch (error) {
-    console.error('Failed to move note to trash:', error);
-    showError('Failed to move note to trash.');
+    console.error('Failed to move note to trash:', error)
+    showError('Failed to move note to trash.')
   }
 }
 
 async function handleRestoreNote(noteId: number) {
   try {
-    await ApiService.restoreNote(noteId);
-    selectedNoteId.value = null;
-    await loadNotes(); // Reload the list
+    await ApiService.restoreNote(noteId)
+    selectedNoteId.value = null
+    await loadNotes() // Reload the list
   } catch (error) {
-    console.error('Failed to restore note:', error);
-    showError('Failed to restore note.');
+    console.error('Failed to restore note:', error)
+    showError('Failed to restore note.')
   }
 }
 
 async function handleDeletePermanently(noteId: number) {
   try {
-    await ApiService.deleteNotePermanently(noteId);
-    selectedNoteId.value = null;
-    await loadNotes(); // Reload the list
+    await ApiService.deleteNotePermanently(noteId)
+    selectedNoteId.value = null
+    await loadNotes() // Reload the list
   } catch (error) {
-    console.error('Failed to permanently delete note:', error);
-    showError('Failed to delete note.');
+    console.error('Failed to permanently delete note:', error)
+    showError('Failed to delete note.')
   }
 }
 
 function handleSwitchView(view: 'notes' | 'trash') {
-  currentView.value = view;
-  selectedNoteId.value = null;
-  loadNotes(); // Reload notes for the new view
+  currentView.value = view
+  selectedNoteId.value = null
+  loadNotes() // Reload notes for the new view
 }
 
 // --- KEYBOARD SHORTCUTS ---
 function handleKeydown(event: KeyboardEvent) {
   // Ignore shortcuts when typing in input/textarea/contenteditable
-  const target = event.target as HTMLElement;
+  const target = event.target as HTMLElement
   if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-    return;
+    return
   }
 
-  const mod = event.ctrlKey || event.metaKey;
+  const mod = event.ctrlKey || event.metaKey
 
   if (mod && event.key === 'n') {
-    event.preventDefault();
-    handleAddNewNote();
-    return;
+    event.preventDefault()
+    handleAddNewNote()
+    return
   }
 
   if (mod && event.key === 'Backspace') {
-    event.preventDefault();
+    event.preventDefault()
     if (selectedNoteId.value !== null && currentView.value === 'notes') {
-      handleMoveToTrash(selectedNoteId.value);
+      handleMoveToTrash(selectedNoteId.value)
     }
-    return;
+    return
   }
 
   if (event.key === 'Escape') {
-    selectedNoteId.value = null;
-    return;
+    selectedNoteId.value = null
+    return
   }
 }
 
 // --- 3. DEFINE COMPUTED PROPERTIES THIRD ---
-const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
-const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
-const selectedNote = computed(() => allNotes.value.find(n => n.id === selectedNoteId.value) || null);
-const modKey = computed(() => navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl');
+const pinnedNotes = computed(() => allNotes.value.filter((n) => n.pinned && !n.inTrash))
+const regularNotes = computed(() => allNotes.value.filter((n) => !n.pinned && !n.inTrash))
+const selectedNote = computed(
+  () => allNotes.value.find((n) => n.id === selectedNoteId.value) || null,
+)
+const modKey = computed(() => (navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'))
 
 // --- 4. RUN ONMOUNTED HOOK LAST ---
 onMounted(async () => {
   // Load theme
-  const savedTheme = localStorage.getItem('darkMode');
+  const savedTheme = localStorage.getItem('darkMode')
   if (savedTheme !== null) {
-    setTheme(savedTheme === 'true');
+    setTheme(savedTheme === 'true')
   } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(prefersDark);
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    setTheme(prefersDark)
   }
 
   // Load background
-  const savedBg = localStorage.getItem('appBackground');
+  const savedBg = localStorage.getItem('appBackground')
   if (savedBg) {
-    setAppBackground(savedBg);
+    setAppBackground(savedBg)
   }
 
   // Preload images
-  Object.values(BACKGROUND_THEMES).forEach(url => {
-    const img = new Image();
-    img.src = url;
-  });
+  Object.values(BACKGROUND_THEMES).forEach((url) => {
+    const img = new Image()
+    img.src = url
+  })
 
   // Register keyboard shortcuts
-  window.addEventListener('keydown', handleKeydown);
+  window.addEventListener('keydown', handleKeydown)
 
   // Load sidebar state
-  const savedSidebar = localStorage.getItem('sidebarCollapsed');
+  const savedSidebar = localStorage.getItem('sidebarCollapsed')
   if (savedSidebar === 'true') {
-    sidebarCollapsed.value = true;
+    sidebarCollapsed.value = true
   }
 
   // Load initial notes
-  await loadNotes();
-});
+  await loadNotes()
+})
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown);
-});
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -220,11 +224,21 @@ onUnmounted(() => {
     <button @click="errorMessage = ''" class="toast-close">&times;</button>
   </div>
 
-  <div class="bg-image" :style="{ backgroundImage: `url(${BACKGROUND_THEMES[currentThemeColor]})` }"></div>
+  <div
+    class="bg-image"
+    :style="{ backgroundImage: `url(${BACKGROUND_THEMES[currentThemeColor]})` }"
+  ></div>
   <div class="bg-overlay"></div>
 
-  <div class="app-container" :class="{ 'dark-theme': isDarkMode, 'has-selected-note': selectedNoteId !== null }">
-    <TopBar @toggle-theme="toggleTheme" @change-background="setAppBackground" :current-theme="currentThemeColor" />
+  <div
+    class="app-container"
+    :class="{ 'dark-theme': isDarkMode, 'has-selected-note': selectedNoteId !== null }"
+  >
+    <TopBar
+      @toggle-theme="toggleTheme"
+      @change-background="setAppBackground"
+      :current-theme="currentThemeColor"
+    />
     <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <button
         class="icon-btn sidebar-toggle-btn"
@@ -236,7 +250,7 @@ onUnmounted(() => {
       <Sidebar
         :pinned-notes="pinnedNotes"
         :regular-notes="regularNotes"
-        :trashed-notes="allNotes.filter(n => n.inTrash)"
+        :trashed-notes="allNotes.filter((n) => n.inTrash)"
         :current-view="currentView"
         @select-note="handleSelectNote"
         @add-new-note="handleAddNewNote"
@@ -252,8 +266,12 @@ onUnmounted(() => {
       />
     </div>
     <footer class="shortcut-legend">
-      <span><kbd>{{ modKey }}+N</kbd> New note</span>
-      <span><kbd>{{ modKey }}+⌫</kbd> Trash note</span>
+      <span
+        ><kbd>{{ modKey }}+N</kbd> New note</span
+      >
+      <span
+        ><kbd>{{ modKey }}+⌫</kbd> Trash note</span
+      >
       <span><kbd>Esc</kbd> Deselect</span>
     </footer>
   </div>
