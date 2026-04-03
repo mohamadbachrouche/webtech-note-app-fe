@@ -33,3 +33,7 @@ coverage
 
 *.tsbuildinfo
 .vite/
+
+# AI tooling
+.claude/
+CLAUDE.md
