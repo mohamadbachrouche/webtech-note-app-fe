@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Note } from '@/types';
-import { ref, watch, onBeforeUnmount } from 'vue';
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -12,7 +12,43 @@ const props = defineProps<{
   selectedNote: Note | null
 }>();
 
+const copied = ref(false);
+
+async function copyToClipboard() {
+  const text = editor.value?.getText() ?? '';
+  try {
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+    copied.value = true;
+    setTimeout(() => { copied.value = false; }, 2000);
+  } catch {
+    // Copy failed silently
+  }
+}
+
 const emit = defineEmits(['update-note', 'move-to-trash', 'restore-note', 'delete-permanently', 'back']);
+
+const dateFormatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+
+const formattedCreatedAt = computed(() => {
+  if (!props.selectedNote) return '';
+  return dateFormatter.format(new Date(props.selectedNote.createdAt));
+});
+
+const formattedLastModified = computed(() => {
+  if (!props.selectedNote) return '';
+  return dateFormatter.format(new Date(props.selectedNote.lastModified));
+});
 
 // Local refs for editing
 const editableTitle = ref('');
@@ -173,6 +209,11 @@ onBeforeUnmount(() => {
         <span v-if="titleError" class="error-message">{{ titleError }}</span>
       </div>
 
+      <div class="note-meta">
+        <span>Created: {{ formattedCreatedAt }}</span>
+        <span>Last modified: {{ formattedLastModified }}</span>
+      </div>
+
       <div class="formatting-tools" v-if="editor">
         <button
           @click="editor.chain().focus().toggleBold().run()"
@@ -231,6 +272,17 @@ onBeforeUnmount(() => {
           title="Insert Link"
         >
           <i class="fas fa-link"></i>
+        </button>
+
+        <div class="divider"></div>
+
+        <button
+          @click="copyToClipboard"
+          :class="['format-btn', { active: copied }]"
+          title="Copy to clipboard"
+        >
+          <i :class="copied ? 'fas fa-check' : 'fas fa-copy'"></i>
+          {{ copied ? 'Copied!' : '' }}
         </button>
 
         <div class="flex-spacer"></div>
