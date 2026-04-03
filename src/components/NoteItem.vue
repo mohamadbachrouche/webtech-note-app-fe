@@ -21,11 +21,16 @@ const formattedDate = computed(() => {
   }
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 });
+
+const formattedLastModified = computed(() => {
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(props.note.lastModified));
+});
 </script>
 
 <template>
   <div class="note-item" :class="{ pinned: note.pinned }">
     <div class="note-item-title">{{ note.title }}</div>
+    <div class="note-item-subtitle">Modified: {{ formattedLastModified }}</div>
     <div class="note-item-preview">{{ preview }}</div>
     <div class="note-item-date">{{ formattedDate }}</div>
     <div v-if="note.pinned" class="pin-indicator">

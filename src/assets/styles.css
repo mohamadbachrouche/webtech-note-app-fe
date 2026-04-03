@@ -467,6 +467,12 @@ body {
   color: var(--text-color);
 }
 
+.note-item-subtitle {
+  font-size: 11px;
+  color: var(--secondary-text);
+  margin-bottom: 4px;
+}
+
 .note-item-preview {
   font-size: 13px;
   color: var(--secondary-text);
@@ -616,7 +622,15 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+}
+
+.note-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.75rem;
+  color: var(--secondary-text);
+  margin-bottom: 12px;
 }
 
 .note-title-input {
