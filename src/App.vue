@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import TopBar from './components/TopBar.vue'
 import Sidebar from './components/SideBar.vue' // Corrected this to SideBar
 import NoteEditor from './components/NoteEditor.vue'
@@ -125,10 +125,41 @@ function handleSwitchView(view: 'notes' | 'trash') {
   loadNotes(); // Reload notes for the new view
 }
 
+// --- KEYBOARD SHORTCUTS ---
+function handleKeydown(event: KeyboardEvent) {
+  // Ignore shortcuts when typing in input/textarea/contenteditable
+  const target = event.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+    return;
+  }
+
+  const mod = event.ctrlKey || event.metaKey;
+
+  if (mod && event.key === 'n') {
+    event.preventDefault();
+    handleAddNewNote();
+    return;
+  }
+
+  if (mod && event.key === 'Backspace') {
+    event.preventDefault();
+    if (selectedNoteId.value !== null && currentView.value === 'notes') {
+      handleMoveToTrash(selectedNoteId.value);
+    }
+    return;
+  }
+
+  if (event.key === 'Escape') {
+    selectedNoteId.value = null;
+    return;
+  }
+}
+
 // --- 3. DEFINE COMPUTED PROPERTIES THIRD ---
 const pinnedNotes = computed(() => allNotes.value.filter(n => n.pinned && !n.inTrash));
 const regularNotes = computed(() => allNotes.value.filter(n => !n.pinned && !n.inTrash));
 const selectedNote = computed(() => allNotes.value.find(n => n.id === selectedNoteId.value) || null);
+const modKey = computed(() => navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl');
 
 // --- 4. RUN ONMOUNTED HOOK LAST ---
 onMounted(async () => {
@@ -153,8 +184,15 @@ onMounted(async () => {
     img.src = url;
   });
 
+  // Register keyboard shortcuts
+  window.addEventListener('keydown', handleKeydown);
+
   // Load initial notes
   await loadNotes();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
 });
 </script>
 
@@ -194,5 +232,42 @@ onMounted(async () => {
         @back="selectedNoteId = null"
       />
     </div>
+    <footer class="shortcut-legend">
+      <span><kbd>{{ modKey }}+N</kbd> New note</span>
+      <span><kbd>{{ modKey }}+⌫</kbd> Trash note</span>
+      <span><kbd>Esc</kbd> Deselect</span>
+    </footer>
   </div>
 </template>
+
+<style scoped>
+.shortcut-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--secondary-text);
+  border-top: 1px solid var(--border-color);
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 10;
+}
+
+.shortcut-legend kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-family: inherit;
+  background: var(--border-color);
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+@media (max-width: 768px) {
+  .shortcut-legend {
+    display: none;
+  }
+}
+</style>
