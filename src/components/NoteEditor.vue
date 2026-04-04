@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const copied = ref(false)
+const showDeleteConfirm = ref(false)
 const noteColorOptions = ['', '#ef4444', '#f97316', '#3b82f6', '#22c55e', '#a855f7']
 
 async function copyToClipboard() {
@@ -174,8 +175,19 @@ function onRestoreClick() {
 
 function onDeleteClick() {
   if (props.selectedNote) {
+    showDeleteConfirm.value = true
+  }
+}
+
+function confirmDelete() {
+  if (props.selectedNote) {
     emit('delete-permanently', props.selectedNote.id)
   }
+  showDeleteConfirm.value = false
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false
 }
 
 function onPinClick() {
@@ -379,6 +391,25 @@ onBeforeUnmount(() => {
       <h2>No Note Selected</h2>
       <p>Select a note from the sidebar or create a new note to get started.</p>
     </div>
+
+    <Transition name="modal-fade">
+      <div
+        v-if="showDeleteConfirm"
+        class="delete-modal-overlay"
+        @click.self="cancelDelete"
+        @keydown.esc="cancelDelete"
+        tabindex="0"
+      >
+        <div class="delete-modal-box">
+          <h3 class="delete-modal-title">Delete note permanently?</h3>
+          <p class="delete-modal-body">This action cannot be undone.</p>
+          <div class="delete-modal-actions">
+            <button class="delete-modal-cancel" @click="cancelDelete">Cancel</button>
+            <button class="delete-modal-confirm" @click="confirmDelete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 

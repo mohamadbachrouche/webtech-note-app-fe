@@ -1531,3 +1531,85 @@ a:hover {
     display: none;
   }
 }
+
+/* Delete confirmation modal */
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-modal-box {
+  background: var(--content-bg);
+  backdrop-filter: blur(20px);
+  max-width: 400px;
+  width: 90%;
+  border-radius: var(--border-radius-sm);
+  padding: 24px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  color: var(--text-color);
+}
+
+.delete-modal-title {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.delete-modal-body {
+  margin: 0 0 20px;
+  color: var(--secondary-text);
+  font-size: 0.95rem;
+}
+
+.delete-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.delete-modal-cancel {
+  padding: 8px 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.delete-modal-cancel:hover {
+  background: var(--item-hover);
+}
+
+.delete-modal-confirm {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--delete-color);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.delete-modal-confirm:hover {
+  background: var(--delete-hover);
+}
+
+/* Modal fade transition */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
