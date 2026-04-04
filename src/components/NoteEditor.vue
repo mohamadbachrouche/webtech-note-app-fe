@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
+import { Markdown } from 'tiptap-markdown'
 
 const props = defineProps<{
   selectedNote: Note | null
@@ -88,6 +89,7 @@ const editor = useEditor({
       placeholder: 'Start typing...',
     }),
     CharacterCount,
+    Markdown,
   ],
   onUpdate: ({ editor }) => {
     if (!props.selectedNote || props.selectedNote.inTrash) return
@@ -216,6 +218,23 @@ async function onDownloadClick() {
   }
 }
 
+function exportAsMarkdown() {
+  if (!editor.value) return
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const storage = editor.value.storage as Record<string, any>
+  const md = storage.markdown.getMarkdown()
+  const content = `# ${editableTitle.value}\n\n${md}`
+  const blob = new Blob([content], { type: 'text/markdown' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${editableTitle.value || 'note'}.md`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 onBeforeUnmount(() => {
   editor.value?.destroy()
 })
@@ -327,6 +346,14 @@ onBeforeUnmount(() => {
 
         <div class="flex-spacer"></div>
 
+        <button
+          id="export-md-btn"
+          class="icon-btn export-md-btn"
+          title="Export as Markdown"
+          @click="exportAsMarkdown"
+        >
+          <i class="fas fa-file-export"></i>
+        </button>
         <button
           id="download-btn"
           class="icon-btn"

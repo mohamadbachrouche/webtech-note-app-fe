@@ -996,6 +996,14 @@ body {
   color: var(--primary-color);
 }
 
+.export-md-btn {
+  color: var(--secondary-text);
+}
+
+.export-md-btn:hover {
+  color: var(--primary-color);
+}
+
 .pin-btn {
   color: var(--secondary-text);
 }
