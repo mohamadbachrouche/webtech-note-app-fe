@@ -14,7 +14,47 @@ const props = defineProps<{
 }>()
 
 const copied = ref(false)
+const tagInput = ref('')
 const noteColorOptions = ['', '#ef4444', '#f97316', '#3b82f6', '#22c55e', '#a855f7']
+
+const currentTags = computed(() =>
+  props.selectedNote?.tags
+    ? props.selectedNote.tags.split(',').map(t => t.trim()).filter(Boolean)
+    : []
+)
+
+function removeTag(index: number) {
+  if (!props.selectedNote || props.selectedNote.inTrash) return
+  const tags = [...currentTags.value]
+  tags.splice(index, 1)
+  emit('update-note', {
+    ...props.selectedNote,
+    tags: tags.join(', '),
+  })
+}
+
+function addTag(e: Event) {
+  e.preventDefault()
+  if (!props.selectedNote || props.selectedNote.inTrash) return
+  const raw = tagInput.value.replace(/,/g, '').trim()
+  if (!raw) return
+  if (currentTags.value.includes(raw)) {
+    tagInput.value = ''
+    return
+  }
+  const newTags = [...currentTags.value, raw].join(', ')
+  tagInput.value = ''
+  emit('update-note', {
+    ...props.selectedNote,
+    tags: newTags,
+  })
+}
+
+function onTagKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' || e.key === ',') {
+    addTag(e)
+  }
+}
 
 async function copyToClipboard() {
   const text = editor.value?.getText() ?? ''
@@ -247,6 +287,21 @@ onBeforeUnmount(() => {
           placeholder="Note title"
         />
         <span v-if="titleError" class="error-message">{{ titleError }}</span>
+      </div>
+
+      <div class="tag-row">
+        <i class="fas fa-tags tag-row-icon"></i>
+        <span v-for="(tag, i) in currentTags" :key="tag" class="tag-pill">
+          {{ tag }}
+          <button class="tag-remove" @click="removeTag(i)" title="Remove tag">&times;</button>
+        </span>
+        <input
+          type="text"
+          v-model="tagInput"
+          class="tag-input"
+          placeholder="Add tag..."
+          @keydown="onTagKeydown"
+        />
       </div>
 
       <div class="note-meta">

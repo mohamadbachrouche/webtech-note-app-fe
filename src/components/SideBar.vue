@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import NoteItem from './NoteItem.vue';
 import type { Note } from '@/types';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps<{
   pinnedNotes: Note[],
@@ -16,9 +16,43 @@ const emit = defineEmits(['select-note', 'add-new-note', 'switch-view']);
 const searchQuery = ref('');
 
 const normalizedQuery = computed(() => searchQuery.value.trim().toLowerCase());
+
+// Tag filtering
+const selectedTag = ref('');
+
+watch(() => props.currentView, () => {
+  selectedTag.value = '';
+});
+
+function parseTags(note: Note): string[] {
+  return note.tags ? note.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+}
+
+const availableTags = computed(() => {
+  const allNotes = [...props.pinnedNotes, ...props.regularNotes];
+  const tagSet = new Set<string>();
+  for (const note of allNotes) {
+    for (const tag of parseTags(note)) {
+      tagSet.add(tag);
+    }
+  }
+  return [...tagSet].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+});
+
+function matchesTag(note: Note): boolean {
+  if (!selectedTag.value) return true;
+  return parseTags(note).includes(selectedTag.value);
+}
+
 const filteredTrashedNotes = computed(() => {
-  if (!normalizedQuery.value) return props.trashedNotes;
-  return props.trashedNotes.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  let arr = props.trashedNotes;
+  if (normalizedQuery.value) {
+    arr = arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  }
+  if (selectedTag.value) {
+    arr = arr.filter(matchesTag);
+  }
+  return arr;
 });
 
 // Sorting state and helpers
@@ -32,15 +66,25 @@ function getTime(n: Note) {
 }
 
 const filteredPinned = computed(() => {
-  const arr = props.pinnedNotes;
-  if (!normalizedQuery.value) return arr;
-  return arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  let arr = props.pinnedNotes;
+  if (normalizedQuery.value) {
+    arr = arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  }
+  if (selectedTag.value) {
+    arr = arr.filter(matchesTag);
+  }
+  return arr;
 });
 
 const filteredRegular = computed(() => {
-  const arr = props.regularNotes;
-  if (!normalizedQuery.value) return arr;
-  return arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  let arr = props.regularNotes;
+  if (normalizedQuery.value) {
+    arr = arr.filter(n => (n.title || '').toLowerCase().includes(normalizedQuery.value));
+  }
+  if (selectedTag.value) {
+    arr = arr.filter(matchesTag);
+  }
+  return arr;
 });
 
 function compareNotes(a: Note, b: Note): number {
@@ -107,6 +151,22 @@ const sortedTrashedNotes = computed(() => {
       >
         Trash
       </div>
+    </div>
+
+    <!-- Tag filter bar -->
+    <div v-if="availableTags.length > 0" class="tag-filter-bar">
+      <button
+        class="tag-filter-pill"
+        :class="{ active: selectedTag === '' }"
+        @click="selectedTag = ''"
+      >All</button>
+      <button
+        v-for="tag in availableTags"
+        :key="tag"
+        class="tag-filter-pill"
+        :class="{ active: selectedTag === tag }"
+        @click="selectedTag = tag"
+      >{{ tag }}</button>
     </div>
 
     <!-- --- MODIFIED: Show EITHER notes OR trash --- -->
