@@ -16,6 +16,7 @@ const currentThemeColor = ref('green')
 const sidebarCollapsed = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
 // --- 2. DEFINE ALL FUNCTIONS SECOND ---
 function setTheme(dark: boolean) {
@@ -81,17 +82,31 @@ async function handleAddNewNote() {
   }
 }
 
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let savedResetTimer: ReturnType<typeof setTimeout> | null = null
+
 async function handleUpdateNote(noteToUpdate: Note) {
-  try {
-    const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate)
-    const index = allNotes.value.findIndex((n) => n.id === response.data.id)
-    if (index !== -1) {
-      allNotes.value[index] = response.data
+  if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
+  if (savedResetTimer) clearTimeout(savedResetTimer)
+
+  saveDebounceTimer = setTimeout(async () => {
+    saveStatus.value = 'saving'
+    try {
+      const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate)
+      const index = allNotes.value.findIndex((n) => n.id === response.data.id)
+      if (index !== -1) {
+        allNotes.value[index] = response.data
+      }
+      saveStatus.value = 'saved'
+      savedResetTimer = setTimeout(() => {
+        saveStatus.value = 'idle'
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to update note:', error)
+      saveStatus.value = 'error'
+      showError('Failed to save note. Please try again.')
     }
-  } catch (error) {
-    console.error('Failed to update note:', error)
-    showError('Failed to save note. Please try again.')
-  }
+  }, 800)
 }
 
 async function handleMoveToTrash(noteId: number) {
@@ -258,6 +273,7 @@ onUnmounted(() => {
       />
       <NoteEditor
         :selected-note="selectedNote"
+        :save-status="saveStatus"
         @update-note="handleUpdateNote"
         @move-to-trash="handleMoveToTrash"
         @restore-note="handleRestoreNote"

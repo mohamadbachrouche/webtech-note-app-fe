@@ -9,9 +9,13 @@ import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
 
-const props = defineProps<{
-  selectedNote: Note | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    selectedNote: Note | null
+    saveStatus?: string
+  }>(),
+  { saveStatus: 'idle' },
+)
 
 const copied = ref(false)
 const noteColorOptions = ['', '#ef4444', '#f97316', '#3b82f6', '#22c55e', '#a855f7']
@@ -369,6 +373,9 @@ onBeforeUnmount(() => {
       <div v-if="editor" class="editor-status-bar">
         {{ editor.storage.characterCount.words() }} words ·
         {{ editor.storage.characterCount.characters() }} characters
+        <span v-if="saveStatus === 'saving'" class="save-indicator save-indicator--saving">Saving<span class="saving-dots"></span></span>
+        <span v-else-if="saveStatus === 'saved'" class="save-indicator save-indicator--saved">&#10003; Saved</span>
+        <span v-else-if="saveStatus === 'error'" class="save-indicator save-indicator--error">Save failed</span>
       </div>
     </div>
 

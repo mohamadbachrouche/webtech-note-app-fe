@@ -1531,3 +1531,35 @@ a:hover {
     display: none;
   }
 }
+
+/* Auto-save status indicator */
+.save-indicator {
+  margin-left: auto;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: opacity 0.3s ease;
+}
+
+.save-indicator--saving {
+  color: var(--secondary-text);
+}
+
+.save-indicator--saved {
+  color: var(--secondary-text);
+}
+
+.save-indicator--error {
+  color: var(--delete-color);
+}
+
+.saving-dots::after {
+  content: '';
+  animation: saving-ellipsis 1.2s steps(4, end) infinite;
+}
+
+@keyframes saving-ellipsis {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
