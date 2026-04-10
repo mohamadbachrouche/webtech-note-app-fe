@@ -35,7 +35,7 @@ describe('TopBar.vue', () => {
     expect(wrapper.find('.color-menu-dropdown').exists()).toBe(false)
 
     // Find the palette button
-    const paletteBtn = wrapper.find('button[title="Change Background"]')
+    const paletteBtn = wrapper.find('button[title="Change background"]')
     await paletteBtn.trigger('click')
 
     // Check if color menu is shown
@@ -65,7 +65,7 @@ describe('TopBar.vue', () => {
     })
 
     // Open the menu
-    const paletteBtn = wrapper.find('button[title="Change Background"]')
+    const paletteBtn = wrapper.find('button[title="Change background"]')
     await paletteBtn.trigger('click')
 
     const swatches = wrapper.findAll('.color-swatch')
@@ -82,7 +82,7 @@ describe('TopBar.vue', () => {
     })
 
     // Open the menu
-    const paletteBtn = wrapper.find('button[title="Change Background"]')
+    const paletteBtn = wrapper.find('button[title="Change background"]')
     await paletteBtn.trigger('click')
     expect(wrapper.find('.color-menu-dropdown').exists()).toBe(true)
 

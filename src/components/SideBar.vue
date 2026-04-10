@@ -69,16 +69,29 @@ const sortedTrashedNotes = computed(() => {
 </script>
 
 <template>
-  <div class="sidebar">
+  <aside id="app-sidebar" class="sidebar" aria-label="Notes navigation">
     <div class="sidebar-header">
       <div class="search-bar">
-        <input type="text" id="search-input" v-model="searchQuery" placeholder="Search notes...">
+        <label for="search-input" class="visually-hidden">Search notes</label>
+        <input
+          type="search"
+          id="search-input"
+          v-model="searchQuery"
+          placeholder="Search notes..."
+        />
       </div>
       <div class="sidebar-actions">
-        <button @click="emit('add-new-note')" id="add-btn" class="icon-btn add-btn" title="Add New Note">
-          <i class="fas fa-plus"></i>
+        <button
+          @click="emit('add-new-note')"
+          id="add-btn"
+          class="icon-btn add-btn"
+          title="Add new note"
+          aria-label="Add new note"
+        >
+          <i class="fas fa-plus" aria-hidden="true"></i>
         </button>
         <div class="sort-container">
+          <label for="sort-select" class="visually-hidden">Sort notes</label>
           <select id="sort-select" v-model="sortOption">
             <option value="date-desc">Newest First</option>
             <option value="date-asc">Oldest First</option>
@@ -90,27 +103,41 @@ const sortedTrashedNotes = computed(() => {
     </div>
 
     <!-- --- MODIFIED: Tabs are now functional --- -->
-    <div class="tabs">
-      <div
+    <div class="tabs" role="tablist">
+      <button
+        type="button"
         class="tab"
         :class="{ active: currentView === 'notes' }"
         id="notes-tab"
+        role="tab"
+        :aria-selected="currentView === 'notes'"
+        aria-controls="notes-section"
         @click="emit('switch-view', 'notes')"
       >
         Notes
-      </div>
-      <div
+      </button>
+      <button
+        type="button"
         class="tab"
         :class="{ active: currentView === 'trash' }"
         id="trash-tab"
+        role="tab"
+        :aria-selected="currentView === 'trash'"
+        aria-controls="trash-section"
         @click="emit('switch-view', 'trash')"
       >
         Trash
-      </div>
+      </button>
     </div>
 
     <!-- --- MODIFIED: Show EITHER notes OR trash --- -->
-    <div v-if="currentView === 'notes'" class="notes-container" id="notes-section">
+    <div
+      v-if="currentView === 'notes'"
+      class="notes-container"
+      id="notes-section"
+      role="tabpanel"
+      aria-labelledby="notes-tab"
+    >
       <div id="notes-list">
         <NoteItem
           v-for="note in sortedNotes"
@@ -122,7 +149,13 @@ const sortedTrashedNotes = computed(() => {
     </div>
 
     <!-- --- NEW: Trash view --- -->
-    <div v-else class="trash-container" id="trash-section">
+    <div
+      v-else
+      class="trash-container"
+      id="trash-section"
+      role="tabpanel"
+      aria-labelledby="trash-tab"
+    >
       <div id="trash-list">
         <NoteItem
           v-for="note in sortedTrashedNotes"
@@ -132,5 +165,29 @@ const sortedTrashedNotes = computed(() => {
         />
       </div>
     </div>
-  </div>
+  </aside>
 </template>
+
+<style scoped>
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The tabs used to be <div> elements styled by the global stylesheet. They
+   are now <button> elements for keyboard/screen-reader affordance, so we
+   need to reset the default button chrome and let the global .tab rules
+   do the rest. */
+.tabs .tab {
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+</style>

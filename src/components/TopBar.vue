@@ -49,48 +49,65 @@ onUnmounted(() => {
       <div class="theme-menu-wrapper" ref="menuWrapper">
         <button
           class="icon-btn"
-          title="Change Background"
+          title="Change background"
+          aria-label="Change background"
+          :aria-expanded="showColorMenu"
+          aria-haspopup="menu"
           @click="showColorMenu = !showColorMenu"
         >
-          <i class="fas fa-palette"></i>
+          <i class="fas fa-palette" aria-hidden="true"></i>
         </button>
-        <div v-if="showColorMenu" class="color-menu-dropdown">
-          <div
+        <div v-if="showColorMenu" class="color-menu-dropdown" role="menu">
+          <button
+            type="button"
             class="color-swatch"
+            role="menuitemradio"
+            :aria-checked="currentTheme === 'blue'"
             :class="{ active: currentTheme === 'blue' }"
             style="background-color: #0070f5"
+            aria-label="Blue background"
             @click="selectColor('blue')"
-          ></div>
-          <div
+          ></button>
+          <button
+            type="button"
             class="color-swatch"
+            role="menuitemradio"
+            :aria-checked="currentTheme === 'yellow'"
             :class="{ active: currentTheme === 'yellow' }"
             style="background-color: #ffcc00"
+            aria-label="Yellow background"
             @click="selectColor('yellow')"
-          ></div>
-          <div
+          ></button>
+          <button
+            type="button"
             class="color-swatch"
+            role="menuitemradio"
+            :aria-checked="currentTheme === 'green'"
             :class="{ active: currentTheme === 'green' }"
             style="background-color: #34c759"
+            aria-label="Green background"
             @click="selectColor('green')"
-          ></div>
+          ></button>
         </div>
       </div>
       <button
         @click="emit('toggle-theme')"
         id="theme-toggle"
         class="icon-btn theme-toggle"
-        title="Toggle Dark Mode"
+        title="Toggle dark mode"
+        aria-label="Toggle dark mode"
       >
-        <span class="light-icon"><i class="fas fa-sun"></i></span>
-        <span class="dark-icon"><i class="fas fa-moon"></i></span>
+        <span class="light-icon" aria-hidden="true"><i class="fas fa-sun"></i></span>
+        <span class="dark-icon" aria-hidden="true"><i class="fas fa-moon"></i></span>
       </button>
       <span class="user-email">{{ userEmail }}</span>
       <button
         @click="handleLogout"
         class="icon-btn logout-btn"
-        title="Sign Out"
+        title="Sign out"
+        aria-label="Sign out"
       >
-        <i class="fas fa-sign-out-alt"></i>
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
       </button>
     </div>
   </div>

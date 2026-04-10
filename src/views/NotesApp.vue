@@ -255,10 +255,17 @@ onUnmounted(() => {
     <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <button
         class="icon-btn sidebar-toggle-btn"
-        :title="sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'"
+        :title="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
+        :aria-label="sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'"
+        :aria-expanded="!sidebarCollapsed"
+        aria-controls="app-sidebar"
         @click="toggleSidebar"
       >
-        <i class="fas" :class="sidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'"></i>
+        <i
+          class="fas"
+          :class="sidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'"
+          aria-hidden="true"
+        ></i>
       </button>
       <Sidebar
         :pinned-notes="pinnedNotes"

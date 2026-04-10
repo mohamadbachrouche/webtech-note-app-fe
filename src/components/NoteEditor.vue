@@ -312,19 +312,24 @@ onBeforeUnmount(() => {
 
     <div v-if="selectedNote && selectedNote.inTrash" class="trash-options" id="trash-options">
       <button @click="onRestoreClick" id="restore-btn" class="icon-text-btn">
-        <i class="fas fa-trash-restore"></i>
+        <i class="fas fa-trash-restore" aria-hidden="true"></i>
         Restore Note
       </button>
       <button @click="onDeleteClick" id="delete-permanently-btn" class="icon-text-btn danger-btn">
-        <i class="fas fa-trash-alt"></i>
+        <i class="fas fa-trash-alt" aria-hidden="true"></i>
         Delete Permanently
       </button>
     </div>
 
     <div v-else-if="selectedNote && !selectedNote.inTrash" class="note-editor">
       <div class="editor-header">
-        <button class="icon-btn back-btn" @click="emit('back')" title="Back to list">
-          <i class="fas fa-arrow-left"></i>
+        <button
+          class="icon-btn back-btn"
+          @click="emit('back')"
+          title="Back to list"
+          aria-label="Back to list"
+        >
+          <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
         <input
           type="text"
@@ -332,8 +337,13 @@ onBeforeUnmount(() => {
           @input="onTitleChange"
           :class="['note-title-input', { 'input-error': titleError }]"
           placeholder="Note title"
+          aria-label="Note title"
+          :aria-invalid="!!titleError"
+          :aria-describedby="titleError ? 'note-title-error' : undefined"
         />
-        <span v-if="titleError" class="error-message">{{ titleError }}</span>
+        <span v-if="titleError" id="note-title-error" class="error-message" role="alert">{{
+          titleError
+        }}</span>
       </div>
 
       <div class="note-meta">
@@ -341,114 +351,144 @@ onBeforeUnmount(() => {
         <span>Last modified: {{ formattedLastModified }}</span>
       </div>
 
-      <div class="formatting-tools" v-if="editor">
+      <div class="formatting-tools" v-if="editor" role="toolbar" aria-label="Text formatting">
         <button
           @click="editor.chain().focus().toggleBold().run()"
           :class="['format-btn', { active: editor.isActive('bold') }]"
           title="Bold"
+          aria-label="Bold"
+          :aria-pressed="editor.isActive('bold')"
         >
-          <i class="fas fa-bold"></i>
+          <i class="fas fa-bold" aria-hidden="true"></i>
         </button>
         <button
           @click="editor.chain().focus().toggleItalic().run()"
           :class="['format-btn', { active: editor.isActive('italic') }]"
           title="Italic"
+          aria-label="Italic"
+          :aria-pressed="editor.isActive('italic')"
         >
-          <i class="fas fa-italic"></i>
+          <i class="fas fa-italic" aria-hidden="true"></i>
         </button>
         <button
           @click="editor.chain().focus().toggleUnderline().run()"
           :class="['format-btn', { active: editor.isActive('underline') }]"
           title="Underline"
+          aria-label="Underline"
+          :aria-pressed="editor.isActive('underline')"
         >
-          <i class="fas fa-underline"></i>
+          <i class="fas fa-underline" aria-hidden="true"></i>
         </button>
 
-        <div class="divider"></div>
+        <div class="divider" aria-hidden="true"></div>
 
         <button
           @click="editor.chain().focus().toggleBulletList().run()"
           :class="['format-btn', { active: editor.isActive('bulletList') }]"
-          title="Bullet List"
+          title="Bullet list"
+          aria-label="Bullet list"
+          :aria-pressed="editor.isActive('bulletList')"
         >
-          <i class="fas fa-list-ul"></i>
+          <i class="fas fa-list-ul" aria-hidden="true"></i>
         </button>
         <button
           @click="editor.chain().focus().toggleOrderedList().run()"
           :class="['format-btn', { active: editor.isActive('orderedList') }]"
-          title="Numbered List"
+          title="Numbered list"
+          aria-label="Numbered list"
+          :aria-pressed="editor.isActive('orderedList')"
         >
-          <i class="fas fa-list-ol"></i>
+          <i class="fas fa-list-ol" aria-hidden="true"></i>
         </button>
 
-        <div class="divider"></div>
+        <div class="divider" aria-hidden="true"></div>
 
         <button
           @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
           :class="['format-btn', { active: editor.isActive('heading', { level: 2 }) }]"
           title="Heading"
+          aria-label="Heading"
+          :aria-pressed="editor.isActive('heading', { level: 2 })"
         >
-          <i class="fas fa-heading"></i> Heading
+          <i class="fas fa-heading" aria-hidden="true"></i> Heading
         </button>
 
-        <div class="divider"></div>
+        <div class="divider" aria-hidden="true"></div>
 
         <button
           @click="setLink"
           :class="['format-btn', { active: editor.isActive('link') }]"
-          title="Insert Link"
+          title="Insert link"
+          aria-label="Insert link"
+          :aria-pressed="editor.isActive('link')"
         >
-          <i class="fas fa-link"></i>
+          <i class="fas fa-link" aria-hidden="true"></i>
         </button>
 
-        <div class="divider"></div>
+        <div class="divider" aria-hidden="true"></div>
 
         <button
           @click="copyToClipboard"
           :class="['format-btn', { active: copied }]"
           title="Copy to clipboard"
+          :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
         >
-          <i :class="copied ? 'fas fa-check' : 'fas fa-copy'"></i>
+          <i :class="copied ? 'fas fa-check' : 'fas fa-copy'" aria-hidden="true"></i>
           {{ copied ? 'Copied!' : '' }}
         </button>
 
-        <div class="flex-spacer"></div>
+        <div class="flex-spacer" aria-hidden="true"></div>
 
         <button
           id="download-btn"
           class="icon-btn"
           :disabled="isDownloading"
-          title="Download as PDF"
+          :title="isDownloading ? 'Downloading…' : 'Download as PDF'"
+          :aria-label="isDownloading ? 'Downloading PDF' : 'Download as PDF'"
           @click="onDownloadClick"
         >
-          <i :class="isDownloading ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+          <i
+            :class="isDownloading ? 'fas fa-spinner fa-spin' : 'fas fa-download'"
+            aria-hidden="true"
+          ></i>
         </button>
         <button
           id="pin-btn"
           class="icon-btn pin-btn"
           :class="{ active: selectedNote.pinned }"
-          title="Pin Note"
+          :title="selectedNote.pinned ? 'Unpin note' : 'Pin note'"
+          :aria-label="selectedNote.pinned ? 'Unpin note' : 'Pin note'"
+          :aria-pressed="selectedNote.pinned"
           @click="onPinClick"
         >
-          <i class="fas fa-thumbtack"></i>
+          <i class="fas fa-thumbtack" aria-hidden="true"></i>
         </button>
-        <div class="color-picker" aria-label="Note color picker">
+        <div class="color-picker" role="radiogroup" aria-label="Note color">
           <button
             v-for="color in noteColorOptions"
             :key="color || 'none'"
             type="button"
             class="color-picker-swatch"
+            role="radio"
+            :aria-checked="(selectedNote.color || '') === color"
             :class="{
               active: (selectedNote.color || '') === color,
               none: color === '',
             }"
             :style="color ? { backgroundColor: color } : {}"
             :title="color ? `Set note color ${color}` : 'Clear note color'"
+            :aria-label="color ? `Set note color ${color}` : 'Clear note color'"
             @click="onColorSelect(color)"
           ></button>
         </div>
-        <button @click="onTrashClick" id="trash-btn" class="icon-btn" title="Move to Trash">
-          <i class="fas fa-trash"></i>
+        <button
+          @click="onTrashClick"
+          id="trash-btn"
+          class="icon-btn"
+          title="Move to trash"
+          aria-label="Move to trash"
+        >
+          <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -460,7 +500,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-else class="empty-state-message" id="empty-state">
-      <div class="empty-icon">
+      <div class="empty-icon" aria-hidden="true">
         <i class="far fa-sticky-note"></i>
       </div>
       <h2>No Note Selected</h2>
