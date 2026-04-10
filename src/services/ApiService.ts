@@ -1,7 +1,6 @@
 import axios from 'axios';
 import type { Note } from '@/types';
 import { getToken, logout } from './AuthService';
-import router from '@/router';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -21,9 +20,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 403) {
+    if (error.response?.status === 401) {
       logout();
-      router.push('/login');
     }
     return Promise.reject(error);
   }

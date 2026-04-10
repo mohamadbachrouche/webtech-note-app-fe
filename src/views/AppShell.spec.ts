@@ -1,15 +1,20 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import App from './App.vue'
+import AppShell from './AppShell.vue'
 import { nextTick } from 'vue'
 
 // Mock ApiService
-vi.mock('./services/ApiService', () => ({
+vi.mock('@/services/ApiService', () => ({
   getActiveNotes: vi.fn(() => Promise.resolve({ data: [] })),
   getTrashedNotes: vi.fn(() => Promise.resolve({ data: [] })),
 }))
 
-describe('App.vue Background Theme', () => {
+// Mock AuthService so logout doesn't trigger router navigation during tests
+vi.mock('@/services/AuthService', () => ({
+  logout: vi.fn(),
+}))
+
+describe('AppShell.vue Background Theme', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.clearAllMocks()
@@ -17,7 +22,7 @@ describe('App.vue Background Theme', () => {
     // Mock window.matchMedia
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: vi.fn().mockImplementation(query => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -31,16 +36,18 @@ describe('App.vue Background Theme', () => {
   })
 
   it('initializes with default green theme', async () => {
-    const wrapper = mount(App)
+    const wrapper = mount(AppShell)
     await nextTick()
     const bgImage = wrapper.find('.bg-image')
     // Green theme URL from constants.ts
-    expect(bgImage.attributes('style')).toContain('https://mcdn.wallpapersafari.com/medium/34/82/0OWTQ5.jpg')
+    expect(bgImage.attributes('style')).toContain(
+      'https://mcdn.wallpapersafari.com/medium/34/82/0OWTQ5.jpg',
+    )
   })
 
   it('loads saved theme from localStorage on mount', async () => {
     localStorage.setItem('appBackground', 'yellow')
-    const wrapper = mount(App)
+    const wrapper = mount(AppShell)
 
     await flushPromises()
     await nextTick()

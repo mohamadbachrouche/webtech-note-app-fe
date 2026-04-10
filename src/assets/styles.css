@@ -1394,7 +1394,8 @@ a:hover {
 }
 
 /* Auth Pages */
-.auth-page {
+.login-view,
+.register-view {
   min-height: 100vh;
   display: flex;
   align-items: center;

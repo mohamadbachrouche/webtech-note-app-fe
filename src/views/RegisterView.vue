@@ -1,55 +1,54 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { register, saveAuth } from '@/services/AuthService'
+import { register } from '@/services/AuthService'
 import type { AxiosError } from 'axios'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const errorMessage = ref('')
-const isSubmitting = ref(false)
+const errorMsg = ref('')
+const isLoading = ref(false)
 
-async function handleRegister() {
-  errorMessage.value = ''
+async function onSubmit() {
+  errorMsg.value = ''
 
   if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters.'
+    errorMsg.value = 'Password must be at least 8 characters.'
     return
   }
 
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
+    errorMsg.value = 'Passwords do not match.'
     return
   }
 
-  isSubmitting.value = true
+  isLoading.value = true
   try {
-    const response = await register(email.value, password.value)
-    saveAuth(response.data)
+    await register(email.value, password.value)
     router.push('/')
   } catch (err) {
     const error = err as AxiosError
     if (error.response?.status === 409) {
-      errorMessage.value = 'An account with this email already exists.'
+      errorMsg.value = 'An account with this email already exists.'
     } else {
-      errorMessage.value = 'Something went wrong. Please try again later.'
+      errorMsg.value = 'Something went wrong. Please try again later.'
     }
   } finally {
-    isSubmitting.value = false
+    isLoading.value = false
   }
 }
 </script>
 
 <template>
-  <div class="auth-page">
+  <div class="register-view">
     <div class="auth-card">
       <h1 class="auth-title">Create Account</h1>
       <p class="auth-subtitle">Sign up to start taking notes</p>
 
-      <form @submit.prevent="handleRegister" class="auth-form">
-        <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
+      <form @submit.prevent="onSubmit" class="auth-form">
+        <div v-if="errorMsg" class="auth-error">{{ errorMsg }}</div>
 
         <div class="form-group">
           <label for="email">Email</label>
@@ -88,14 +87,14 @@ async function handleRegister() {
           />
         </div>
 
-        <button type="submit" class="auth-btn" :disabled="isSubmitting">
-          {{ isSubmitting ? 'Creating account...' : 'Create Account' }}
+        <button type="submit" class="auth-btn" :disabled="isLoading">
+          {{ isLoading ? 'Creating account...' : 'Create Account' }}
         </button>
       </form>
 
       <p class="auth-footer">
         Already have an account?
-        <router-link to="/login">Sign in</router-link>
+        <router-link to="/login">Log in</router-link>
       </p>
     </div>
   </div>

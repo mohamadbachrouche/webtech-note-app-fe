@@ -1,19 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { logout, getEmail } from '@/services/AuthService';
 
-const router = useRouter();
-
-// Define the event this component can send to its parent
-const emit = defineEmits(['toggle-theme', 'change-background']);
-
-const userEmail = getEmail();
-
-function handleLogout() {
-  logout();
-  router.push('/login');
-}
+// Define the events this component can send to its parent
+const emit = defineEmits(['toggle-theme', 'change-background', 'logout']);
 
 defineProps<{
   currentTheme: string
@@ -84,9 +73,8 @@ onUnmounted(() => {
         <span class="light-icon"><i class="fas fa-sun"></i></span>
         <span class="dark-icon"><i class="fas fa-moon"></i></span>
       </button>
-      <span class="user-email">{{ userEmail }}</span>
       <button
-        @click="handleLogout"
+        @click="emit('logout')"
         class="icon-btn logout-btn"
         title="Sign Out"
       >

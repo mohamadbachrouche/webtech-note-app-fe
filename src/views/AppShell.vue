@@ -5,6 +5,7 @@ import Sidebar from '@/components/SideBar.vue'
 import NoteEditor from '@/components/NoteEditor.vue'
 import type { Note } from '@/types'
 import * as ApiService from '@/services/ApiService'
+import * as AuthService from '@/services/AuthService'
 import { BACKGROUND_THEMES } from '@/constants'
 
 // --- 1. DEFINE ALL STATE REFS FIRST ---
@@ -133,6 +134,10 @@ function handleSwitchView(view: 'notes' | 'trash') {
   loadNotes() // Reload notes for the new view
 }
 
+function handleLogout() {
+  AuthService.logout()
+}
+
 // --- KEYBOARD SHORTCUTS ---
 function handleKeydown(event: KeyboardEvent) {
   // Ignore shortcuts when typing in input/textarea/contenteditable
@@ -237,6 +242,7 @@ onUnmounted(() => {
     <TopBar
       @toggle-theme="toggleTheme"
       @change-background="setAppBackground"
+      @logout="handleLogout"
       :current-theme="currentThemeColor"
     />
     <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
