@@ -7,6 +7,10 @@ const mockedAxios = vi.hoisted(() => ({
   post: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  interceptors: {
+    request: { use: vi.fn() },
+    response: { use: vi.fn() },
+  },
 }))
 
 // 2. Mock axios with a factory function that returns our hoisted mocks
