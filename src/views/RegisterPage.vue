@@ -11,11 +11,22 @@ const confirmPassword = ref('')
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
+const PASSWORD_RULES_MESSAGE =
+  'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a digit.'
+
+function isStrongPassword(value: string): boolean {
+  if (value.length < 8) return false
+  if (!/[a-z]/.test(value)) return false
+  if (!/[A-Z]/.test(value)) return false
+  if (!/\d/.test(value)) return false
+  return true
+}
+
 async function handleRegister() {
   errorMessage.value = ''
 
-  if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters.'
+  if (!isStrongPassword(password.value)) {
+    errorMessage.value = PASSWORD_RULES_MESSAGE
     return
   }
 
@@ -69,11 +80,13 @@ async function handleRegister() {
             id="password"
             v-model="password"
             type="password"
-            placeholder="At least 8 characters"
+            placeholder="At least 8 chars, upper + lower + digit"
             required
             minlength="8"
             autocomplete="new-password"
+            aria-describedby="password-help"
           />
+          <p id="password-help" class="form-hint">{{ PASSWORD_RULES_MESSAGE }}</p>
         </div>
 
         <div class="form-group">

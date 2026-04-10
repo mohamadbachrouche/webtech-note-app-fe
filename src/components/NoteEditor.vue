@@ -3,11 +3,16 @@ import type { Note } from '@/types'
 import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { downloadNoteAsPdf } from '@/services/ApiService'
+import { useToast } from '@/composables/useToast'
+import { useDebouncedFn } from '@/composables/useDebouncedFn'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
+
+const toast = useToast()
 
 const props = defineProps<{
   selectedNote: Note | null
@@ -75,6 +80,31 @@ function validateTitle(): boolean {
   return true
 }
 
+/**
+ * Debounced emitter for note updates. onUpdate from Tiptap fires on every
+ * keystroke; without debouncing that produces one PUT per character. We
+ * coalesce to a single emit ~500ms after the user stops typing, and we
+ * flush explicitly when switching notes or unmounting so nothing is lost.
+ */
+const debouncedEmitUpdate = useDebouncedFn((note: Note) => {
+  emit('update-note', note)
+}, 500)
+
+function emitUpdate(immediate = false) {
+  if (!props.selectedNote || props.selectedNote.inTrash) return
+  const payload: Note = {
+    ...props.selectedNote,
+    title: editableTitle.value,
+    content: editor.value?.getHTML() || '',
+  }
+  if (immediate) {
+    debouncedEmitUpdate.cancel()
+    emit('update-note', payload)
+  } else {
+    debouncedEmitUpdate(payload)
+  }
+}
+
 // Tiptap Editor Setup
 const editor = useEditor({
   content: props.selectedNote?.content || '',
@@ -89,15 +119,8 @@ const editor = useEditor({
     }),
     CharacterCount,
   ],
-  onUpdate: ({ editor }) => {
-    if (!props.selectedNote || props.selectedNote.inTrash) return
-
-    // Emit update on every change
-    emit('update-note', {
-      ...props.selectedNote,
-      title: editableTitle.value,
-      content: editor.getHTML(),
-    })
+  onUpdate: () => {
+    emitUpdate()
   },
 })
 
@@ -112,29 +135,28 @@ watch(
       // If it's the SAME note, we ignore prop updates to avoid the
       // async "echo" causing cursor jumps or reverting content while typing.
       if (!isSameNote) {
+        // Flush any pending edit for the previous note before swapping.
+        debouncedEmitUpdate.flush()
         editableTitle.value = newNote.title
         titleError.value = '' // Clear validation error when switching notes
         editor.value?.commands.setContent(newNote.content)
       }
     } else {
+      debouncedEmitUpdate.flush()
       editableTitle.value = ''
       editor.value?.commands.setContent('')
     }
   },
 )
 
-// Handle Title Updates separately
+// Handle Title Updates separately (debounced)
 function onTitleChange() {
   if (!props.selectedNote || props.selectedNote.inTrash) return
 
   // Validate title before saving
   if (!validateTitle()) return
 
-  emit('update-note', {
-    ...props.selectedNote,
-    title: editableTitle.value,
-    content: editor.value?.getHTML() || '',
-  })
+  emitUpdate()
 }
 
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
@@ -206,14 +228,29 @@ function onRestoreClick() {
   }
 }
 
+const showDeleteConfirm = ref(false)
+
 function onDeleteClick() {
+  if (props.selectedNote) {
+    showDeleteConfirm.value = true
+  }
+}
+
+function confirmDelete() {
   if (props.selectedNote) {
     emit('delete-permanently', props.selectedNote.id)
   }
+  showDeleteConfirm.value = false
+}
+
+function cancelDelete() {
+  showDeleteConfirm.value = false
 }
 
 function onPinClick() {
   if (!props.selectedNote || props.selectedNote.inTrash) return
+  // Pin is a discrete action — flush any pending text edit and emit now.
+  debouncedEmitUpdate.flush()
   emit('update-note', {
     ...props.selectedNote,
     pinned: !props.selectedNote.pinned,
@@ -222,6 +259,7 @@ function onPinClick() {
 
 function onColorSelect(chosenColor: string) {
   if (!props.selectedNote || props.selectedNote.inTrash) return
+  debouncedEmitUpdate.flush()
   emit('update-note', {
     ...props.selectedNote,
     color: chosenColor,
@@ -245,18 +283,33 @@ async function onDownloadClick() {
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Failed to download note as PDF:', error)
+    toast.error('Failed to download note as PDF. Please try again.')
   } finally {
     isDownloading.value = false
   }
 }
 
 onBeforeUnmount(() => {
+  // Make sure any pending debounced edit is flushed before the editor is
+  // destroyed; otherwise the last few keystrokes would be lost.
+  debouncedEmitUpdate.flush()
   editor.value?.destroy()
 })
 </script>
 
 <template>
   <div class="note-content-area">
+    <ConfirmDialog
+      :open="showDeleteConfirm"
+      title="Delete note permanently?"
+      :message="`\u201C${selectedNote?.title || 'Untitled'}\u201D will be permanently deleted. This action cannot be undone.`"
+      confirm-label="Delete permanently"
+      cancel-label="Cancel"
+      destructive
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
+
     <div v-if="selectedNote && selectedNote.inTrash" class="trash-options" id="trash-options">
       <button @click="onRestoreClick" id="restore-btn" class="icon-text-btn">
         <i class="fas fa-trash-restore"></i>

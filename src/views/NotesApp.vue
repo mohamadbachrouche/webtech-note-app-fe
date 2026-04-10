@@ -3,9 +3,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import TopBar from '@/components/TopBar.vue'
 import Sidebar from '@/components/SideBar.vue'
 import NoteEditor from '@/components/NoteEditor.vue'
+import ToastHost from '@/components/ToastHost.vue'
 import type { Note } from '@/types'
 import * as ApiService from '@/services/ApiService'
 import { BACKGROUND_THEMES } from '@/constants'
+import { useToast } from '@/composables/useToast'
+
+const toast = useToast()
 
 // --- 1. DEFINE ALL STATE REFS FIRST ---
 const allNotes = ref<Note[]>([])
@@ -14,8 +18,12 @@ const currentView = ref<'notes' | 'trash'>('notes')
 const isDarkMode = ref(false)
 const currentThemeColor = ref('green')
 const sidebarCollapsed = ref(false)
+const isInitialLoad = ref(true)
 const isLoading = ref(false)
-const errorMessage = ref('')
+
+// Monotonic request id for loadNotes() so that a late response from a
+// previously-toggled view can't overwrite the current one.
+let loadSequence = 0
 
 // --- 2. DEFINE ALL FUNCTIONS SECOND ---
 function setTheme(dark: boolean) {
@@ -40,29 +48,27 @@ function setAppBackground(color: string) {
 }
 
 async function loadNotes() {
+  const seq = ++loadSequence
   isLoading.value = true
-  errorMessage.value = ''
   try {
-    let response
-    if (currentView.value === 'notes') {
-      response = await ApiService.getActiveNotes()
-    } else {
-      response = await ApiService.getTrashedNotes()
-    }
+    const response =
+      currentView.value === 'notes'
+        ? await ApiService.getActiveNotes()
+        : await ApiService.getTrashedNotes()
+    // Discard stale responses (e.g. rapid view toggles) so the latest
+    // request always wins.
+    if (seq !== loadSequence) return
     allNotes.value = response.data
   } catch (error) {
+    if (seq !== loadSequence) return
     console.error('Failed to fetch notes:', error)
-    errorMessage.value = 'Failed to load notes. Please try again.'
+    toast.error('Failed to load notes. Please try again.')
   } finally {
-    isLoading.value = false
+    if (seq === loadSequence) {
+      isLoading.value = false
+      isInitialLoad.value = false
+    }
   }
-}
-
-function showError(message: string) {
-  errorMessage.value = message
-  setTimeout(() => {
-    errorMessage.value = ''
-  }, 5000)
 }
 
 function handleSelectNote(id: number) {
@@ -77,7 +83,7 @@ async function handleAddNewNote() {
     selectedNoteId.value = response.data.id
   } catch (error) {
     console.error('Failed to create note:', error)
-    showError('Failed to create note. Please try again.')
+    toast.error('Failed to create note. Please try again.')
   }
 }
 
@@ -90,7 +96,7 @@ async function handleUpdateNote(noteToUpdate: Note) {
     }
   } catch (error) {
     console.error('Failed to update note:', error)
-    showError('Failed to save note. Please try again.')
+    toast.error('Failed to save note. Please try again.')
   }
 }
 
@@ -101,7 +107,7 @@ async function handleMoveToTrash(noteId: number) {
     await loadNotes() // Reload the list
   } catch (error) {
     console.error('Failed to move note to trash:', error)
-    showError('Failed to move note to trash.')
+    toast.error('Failed to move note to trash.')
   }
 }
 
@@ -112,7 +118,7 @@ async function handleRestoreNote(noteId: number) {
     await loadNotes() // Reload the list
   } catch (error) {
     console.error('Failed to restore note:', error)
-    showError('Failed to restore note.')
+    toast.error('Failed to restore note.')
   }
 }
 
@@ -123,7 +129,7 @@ async function handleDeletePermanently(noteId: number) {
     await loadNotes() // Reload the list
   } catch (error) {
     console.error('Failed to permanently delete note:', error)
-    showError('Failed to delete note.')
+    toast.error('Failed to delete note.')
   }
 }
 
@@ -213,16 +219,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- Loading Overlay -->
-  <div v-if="isLoading" class="loading-overlay">
-    <div class="loading-spinner"></div>
+  <!-- Full-screen loading overlay: only on the very first load. Subsequent
+       refreshes (after trash/restore/switch-view) show a subtle inline
+       indicator instead so the UI doesn't blank out. -->
+  <div v-if="isInitialLoad && isLoading" class="loading-overlay" role="status" aria-live="polite">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <span class="visually-hidden">Loading notes…</span>
   </div>
 
-  <!-- Error Toast -->
-  <div v-if="errorMessage" class="error-toast">
-    <span>{{ errorMessage }}</span>
-    <button @click="errorMessage = ''" class="toast-close">&times;</button>
-  </div>
+  <ToastHost />
 
   <div
     class="bg-image"
@@ -239,6 +244,14 @@ onUnmounted(() => {
       @change-background="setAppBackground"
       :current-theme="currentThemeColor"
     />
+    <div
+      v-if="!isInitialLoad && isLoading"
+      class="top-progress"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="visually-hidden">Loading…</span>
+    </div>
     <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <button
         class="icon-btn sidebar-toggle-btn"
@@ -306,5 +319,44 @@ onUnmounted(() => {
   .shortcut-legend {
     display: none;
   }
+}
+
+.top-progress {
+  position: relative;
+  height: 2px;
+  background: transparent;
+  overflow: hidden;
+}
+.top-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--accent-color, #3b82f6) 50%,
+    transparent 100%
+  );
+  animation: top-progress-slide 1.2s linear infinite;
+}
+@keyframes top-progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>
