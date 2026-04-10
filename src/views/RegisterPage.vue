@@ -59,7 +59,7 @@ async function handleRegister() {
       <h1 class="auth-title">Create Account</h1>
       <p class="auth-subtitle">Sign up to start taking notes</p>
 
-      <form @submit.prevent="handleRegister" class="auth-form">
+      <form class="auth-form" @submit.prevent="handleRegister">
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
         <div class="form-group">

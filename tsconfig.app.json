@@ -5,6 +5,15 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
 
+    // The base @vue/tsconfig/tsconfig.dom.json already enables `strict`
+    // and `noUncheckedIndexedAccess`. These extra flags catch the classes
+    // of bugs that strict alone doesn't: dead code, unused parameters,
+    // accidental overrides, and fall-through switches.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
     "paths": {
       "@/*": ["./src/*"]
     }

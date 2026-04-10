@@ -240,9 +240,9 @@ onUnmounted(() => {
     :class="{ 'dark-theme': isDarkMode, 'has-selected-note': selectedNoteId !== null }"
   >
     <TopBar
+      :current-theme="currentThemeColor"
       @toggle-theme="toggleTheme"
       @change-background="setAppBackground"
-      :current-theme="currentThemeColor"
     />
     <div
       v-if="!isInitialLoad && isLoading"

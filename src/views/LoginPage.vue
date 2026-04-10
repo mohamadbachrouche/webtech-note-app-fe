@@ -36,7 +36,7 @@ async function handleLogin() {
       <h1 class="auth-title">Welcome Back</h1>
       <p class="auth-subtitle">Sign in to access your notes</p>
 
-      <form @submit.prevent="handleLogin" class="auth-form">
+      <form class="auth-form" @submit.prevent="handleLogin">
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
         <div class="form-group">

@@ -310,12 +310,12 @@ onBeforeUnmount(() => {
       @cancel="cancelDelete"
     />
 
-    <div v-if="selectedNote && selectedNote.inTrash" class="trash-options" id="trash-options">
-      <button @click="onRestoreClick" id="restore-btn" class="icon-text-btn">
+    <div v-if="selectedNote && selectedNote.inTrash" id="trash-options" class="trash-options">
+      <button id="restore-btn" class="icon-text-btn" @click="onRestoreClick">
         <i class="fas fa-trash-restore" aria-hidden="true"></i>
         Restore Note
       </button>
-      <button @click="onDeleteClick" id="delete-permanently-btn" class="icon-text-btn danger-btn">
+      <button id="delete-permanently-btn" class="icon-text-btn danger-btn" @click="onDeleteClick">
         <i class="fas fa-trash-alt" aria-hidden="true"></i>
         Delete Permanently
       </button>
@@ -325,21 +325,21 @@ onBeforeUnmount(() => {
       <div class="editor-header">
         <button
           class="icon-btn back-btn"
-          @click="emit('back')"
           title="Back to list"
           aria-label="Back to list"
+          @click="emit('back')"
         >
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </button>
         <input
-          type="text"
           v-model="editableTitle"
-          @input="onTitleChange"
+          type="text"
           :class="['note-title-input', { 'input-error': titleError }]"
           placeholder="Note title"
           aria-label="Note title"
           :aria-invalid="!!titleError"
           :aria-describedby="titleError ? 'note-title-error' : undefined"
+          @input="onTitleChange"
         />
         <span v-if="titleError" id="note-title-error" class="error-message" role="alert">{{
           titleError
@@ -351,31 +351,31 @@ onBeforeUnmount(() => {
         <span>Last modified: {{ formattedLastModified }}</span>
       </div>
 
-      <div class="formatting-tools" v-if="editor" role="toolbar" aria-label="Text formatting">
+      <div v-if="editor" class="formatting-tools" role="toolbar" aria-label="Text formatting">
         <button
-          @click="editor.chain().focus().toggleBold().run()"
           :class="['format-btn', { active: editor.isActive('bold') }]"
           title="Bold"
           aria-label="Bold"
           :aria-pressed="editor.isActive('bold')"
+          @click="editor.chain().focus().toggleBold().run()"
         >
           <i class="fas fa-bold" aria-hidden="true"></i>
         </button>
         <button
-          @click="editor.chain().focus().toggleItalic().run()"
           :class="['format-btn', { active: editor.isActive('italic') }]"
           title="Italic"
           aria-label="Italic"
           :aria-pressed="editor.isActive('italic')"
+          @click="editor.chain().focus().toggleItalic().run()"
         >
           <i class="fas fa-italic" aria-hidden="true"></i>
         </button>
         <button
-          @click="editor.chain().focus().toggleUnderline().run()"
           :class="['format-btn', { active: editor.isActive('underline') }]"
           title="Underline"
           aria-label="Underline"
           :aria-pressed="editor.isActive('underline')"
+          @click="editor.chain().focus().toggleUnderline().run()"
         >
           <i class="fas fa-underline" aria-hidden="true"></i>
         </button>
@@ -383,20 +383,20 @@ onBeforeUnmount(() => {
         <div class="divider" aria-hidden="true"></div>
 
         <button
-          @click="editor.chain().focus().toggleBulletList().run()"
           :class="['format-btn', { active: editor.isActive('bulletList') }]"
           title="Bullet list"
           aria-label="Bullet list"
           :aria-pressed="editor.isActive('bulletList')"
+          @click="editor.chain().focus().toggleBulletList().run()"
         >
           <i class="fas fa-list-ul" aria-hidden="true"></i>
         </button>
         <button
-          @click="editor.chain().focus().toggleOrderedList().run()"
           :class="['format-btn', { active: editor.isActive('orderedList') }]"
           title="Numbered list"
           aria-label="Numbered list"
           :aria-pressed="editor.isActive('orderedList')"
+          @click="editor.chain().focus().toggleOrderedList().run()"
         >
           <i class="fas fa-list-ol" aria-hidden="true"></i>
         </button>
@@ -404,11 +404,11 @@ onBeforeUnmount(() => {
         <div class="divider" aria-hidden="true"></div>
 
         <button
-          @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
           :class="['format-btn', { active: editor.isActive('heading', { level: 2 }) }]"
           title="Heading"
           aria-label="Heading"
           :aria-pressed="editor.isActive('heading', { level: 2 })"
+          @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
         >
           <i class="fas fa-heading" aria-hidden="true"></i> Heading
         </button>
@@ -416,11 +416,11 @@ onBeforeUnmount(() => {
         <div class="divider" aria-hidden="true"></div>
 
         <button
-          @click="setLink"
           :class="['format-btn', { active: editor.isActive('link') }]"
           title="Insert link"
           aria-label="Insert link"
           :aria-pressed="editor.isActive('link')"
+          @click="setLink"
         >
           <i class="fas fa-link" aria-hidden="true"></i>
         </button>
@@ -428,10 +428,10 @@ onBeforeUnmount(() => {
         <div class="divider" aria-hidden="true"></div>
 
         <button
-          @click="copyToClipboard"
           :class="['format-btn', { active: copied }]"
           title="Copy to clipboard"
           :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
+          @click="copyToClipboard"
         >
           <i :class="copied ? 'fas fa-check' : 'fas fa-copy'" aria-hidden="true"></i>
           {{ copied ? 'Copied!' : '' }}
@@ -482,11 +482,11 @@ onBeforeUnmount(() => {
           ></button>
         </div>
         <button
-          @click="onTrashClick"
           id="trash-btn"
           class="icon-btn"
           title="Move to trash"
           aria-label="Move to trash"
+          @click="onTrashClick"
         >
           <i class="fas fa-trash" aria-hidden="true"></i>
         </button>
@@ -499,7 +499,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div v-else class="empty-state-message" id="empty-state">
+    <div v-else id="empty-state" class="empty-state-message">
       <div class="empty-icon" aria-hidden="true">
         <i class="far fa-sticky-note"></i>
       </div>

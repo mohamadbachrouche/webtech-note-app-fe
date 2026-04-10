@@ -74,19 +74,19 @@ const sortedTrashedNotes = computed(() => {
       <div class="search-bar">
         <label for="search-input" class="visually-hidden">Search notes</label>
         <input
-          type="search"
           id="search-input"
           v-model="searchQuery"
+          type="search"
           placeholder="Search notes..."
         />
       </div>
       <div class="sidebar-actions">
         <button
-          @click="emit('add-new-note')"
           id="add-btn"
           class="icon-btn add-btn"
           title="Add new note"
           aria-label="Add new note"
+          @click="emit('add-new-note')"
         >
           <i class="fas fa-plus" aria-hidden="true"></i>
         </button>
@@ -105,10 +105,10 @@ const sortedTrashedNotes = computed(() => {
     <!-- --- MODIFIED: Tabs are now functional --- -->
     <div class="tabs" role="tablist">
       <button
+        id="notes-tab"
         type="button"
         class="tab"
         :class="{ active: currentView === 'notes' }"
-        id="notes-tab"
         role="tab"
         :aria-selected="currentView === 'notes'"
         aria-controls="notes-section"
@@ -117,10 +117,10 @@ const sortedTrashedNotes = computed(() => {
         Notes
       </button>
       <button
+        id="trash-tab"
         type="button"
         class="tab"
         :class="{ active: currentView === 'trash' }"
-        id="trash-tab"
         role="tab"
         :aria-selected="currentView === 'trash'"
         aria-controls="trash-section"
@@ -133,8 +133,8 @@ const sortedTrashedNotes = computed(() => {
     <!-- --- MODIFIED: Show EITHER notes OR trash --- -->
     <div
       v-if="currentView === 'notes'"
-      class="notes-container"
       id="notes-section"
+      class="notes-container"
       role="tabpanel"
       aria-labelledby="notes-tab"
     >
@@ -151,8 +151,8 @@ const sortedTrashedNotes = computed(() => {
     <!-- --- NEW: Trash view --- -->
     <div
       v-else
-      class="trash-container"
       id="trash-section"
+      class="trash-container"
       role="tabpanel"
       aria-labelledby="trash-tab"
     >

@@ -46,7 +46,7 @@ onUnmounted(() => {
   <div class="top-bar">
     <div class="app-title">Notes</div>
     <div class="top-bar-actions">
-      <div class="theme-menu-wrapper" ref="menuWrapper">
+      <div ref="menuWrapper" class="theme-menu-wrapper">
         <button
           class="icon-btn"
           title="Change background"
@@ -91,21 +91,21 @@ onUnmounted(() => {
         </div>
       </div>
       <button
-        @click="emit('toggle-theme')"
         id="theme-toggle"
         class="icon-btn theme-toggle"
         title="Toggle dark mode"
         aria-label="Toggle dark mode"
+        @click="emit('toggle-theme')"
       >
         <span class="light-icon" aria-hidden="true"><i class="fas fa-sun"></i></span>
         <span class="dark-icon" aria-hidden="true"><i class="fas fa-moon"></i></span>
       </button>
       <span class="user-email">{{ userEmail }}</span>
       <button
-        @click="handleLogout"
         class="icon-btn logout-btn"
         title="Sign out"
         aria-label="Sign out"
+        @click="handleLogout"
       >
         <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
       </button>
