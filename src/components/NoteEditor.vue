@@ -137,26 +137,60 @@ function onTitleChange() {
   })
 }
 
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
+
+function normalizeLinkUrl(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+
+  // Allow protocol-relative URLs and schemeless hosts by assuming https://
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`
+
+  try {
+    const parsed = new URL(candidate)
+    if (!ALLOWED_LINK_PROTOCOLS.has(parsed.protocol)) {
+      return null
+    }
+    return parsed.toString()
+  } catch {
+    return null
+  }
+}
+
 function setLink() {
   const previousUrl = editor.value?.getAttributes('link').href
-  const url = window.prompt('URL', previousUrl)
+  const raw = window.prompt('URL', previousUrl)
 
   // cancelled
-  if (url === null) {
+  if (raw === null) {
     return
   }
 
   // empty
-  if (url === '') {
+  if (raw.trim() === '') {
     editor.value?.chain().focus().extendMarkRange('link').unsetLink().run()
     return
   }
 
-  // update
+  const safeUrl = normalizeLinkUrl(raw)
+  if (!safeUrl) {
+    window.alert('Invalid URL. Only http, https, and mailto links are allowed.')
+    return
+  }
+
+  // Let Tiptap build the anchor; never string-concatenate HTML.
   if (editor.value?.state.selection.empty) {
-    editor.value.chain().focus().insertContent(`<a href="${url}">${url}</a>`).run()
+    editor.value
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'text',
+        text: safeUrl,
+        marks: [{ type: 'link', attrs: { href: safeUrl } }],
+      })
+      .run()
   } else {
-    editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+    editor.value?.chain().focus().extendMarkRange('link').setLink({ href: safeUrl }).run()
   }
 }
 

@@ -21,7 +21,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 403) {
+    const status = error.response?.status;
+    // 401 = unauthenticated (missing/expired token)
+    // 403 = forbidden (token present but rejected — Spring Security often returns this)
+    if (status === 401 || status === 403) {
       logout();
       router.push('/login');
     }

@@ -99,6 +99,20 @@ Production uses `.env.production`:
 VITE_API_BASE_URL=https://webtech-note-app-be.onrender.com/api
 ```
 
+## 🔒 Security notes
+
+- **JWT storage.** The auth token is currently persisted in `localStorage` for
+  simplicity. This exposes it to any XSS on the page, so the rich-text editor
+  validates link URLs (only `http:`, `https:`, and `mailto:` are allowed) and
+  the backend tightly scopes what the token can do. A fully-hardened setup
+  would move the token to an HTTP-only cookie set by the backend — that's out
+  of scope for the current coursework but tracked as future work.
+- **Logout wiping.** Logging out clears all app-specific `localStorage` keys
+  (token, email, darkMode, appBackground, sidebarCollapsed) so nothing leaks
+  to the next user on a shared device.
+- **Env validation.** `src/main.ts` throws on startup if `VITE_API_BASE_URL`
+  is not set — no silent misconfiguration.
+
 ## 👨‍💻 Author
 
 Mohamad Bachrouche - HTW Berlin

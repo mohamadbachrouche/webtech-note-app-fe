@@ -12,6 +12,17 @@ export interface AuthResponse {
   email: string
 }
 
+/**
+ * Keys that the app writes to localStorage and that should be wiped on logout
+ * so that a shared device does not leak state between users.
+ *
+ * NOTE: storing the JWT in localStorage exposes it to any XSS on the page.
+ * The XSS surface is minimized by validating rich-text URLs (see NoteEditor),
+ * but a fully-hardened setup would move the token to an HTTP-only cookie set
+ * by the backend. See README.md for the trade-off.
+ */
+const STORAGE_KEYS = ['token', 'email', 'darkMode', 'appBackground', 'sidebarCollapsed'] as const
+
 export function login(email: string, password: string) {
   return authClient.post<AuthResponse>('/auth/login', { email, password })
 }
@@ -38,6 +49,7 @@ export function isAuthenticated(): boolean {
 }
 
 export function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('email')
+  for (const key of STORAGE_KEYS) {
+    localStorage.removeItem(key)
+  }
 }
