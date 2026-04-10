@@ -43,12 +43,31 @@ export default defineConfigWithVueTs(
       // suffixed names. Disable the rule globally; the recommended
       // config's other safeguards still apply.
       'vue/multi-word-component-names': 'off',
+      // Path alias convention: cross-directory imports must use the
+      // `@/` alias instead of `../` relatives. Same-directory `./`
+      // imports remain fine. Test files are exempt below so specs can
+      // still reach the module-under-test via `../Component.vue`.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../*', '../../*', '../../../*'],
+              message: 'Use the "@/" alias instead of "../" for cross-directory imports.',
+            },
+          ],
+        },
+      ],
     },
   },
 
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*', 'src/**/*.spec.ts'],
+    rules: {
+      // Specs conventionally reach their module-under-test via `../Foo.vue`.
+      'no-restricted-imports': 'off',
+    },
   },
   skipFormatting,
 )

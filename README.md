@@ -87,17 +87,23 @@ src/
 
 ## 🔧 Environment Variables
 
-Create `.env.development` for local development:
+Copy the example files and fill in the values for your environment — the
+examples at the root of the repo are the source of truth:
 
-```
-VITE_API_BASE_URL=http://localhost:8080/api
+```sh
+cp .env.development.example .env.development
+cp .env.production.example .env.production
 ```
 
-Production uses `.env.production`:
+Both files expose a single variable:
 
-```
-VITE_API_BASE_URL=https://webtech-note-app-be.onrender.com/api
-```
+| Variable            | Description                       | Required |
+| ------------------- | --------------------------------- | -------- |
+| `VITE_API_BASE_URL` | Base URL of the backend REST API. | Yes      |
+
+`src/main.ts` throws on startup if `VITE_API_BASE_URL` is missing, so a
+mis-configured environment fails fast rather than silently 404-ing every
+request.
 
 ## 🔒 Security notes
 
@@ -112,6 +118,19 @@ VITE_API_BASE_URL=https://webtech-note-app-be.onrender.com/api
   to the next user on a shared device.
 - **Env validation.** `src/main.ts` throws on startup if `VITE_API_BASE_URL`
   is not set — no silent misconfiguration.
+
+## 🧰 Developer tooling
+
+- **Pre-commit hook.** `husky` + `lint-staged` run `eslint --fix` and
+  `prettier --write` on staged files so formatting and trivial lint
+  issues never land in a commit. The hook is installed automatically
+  when you run `npm install` (via the `prepare` script).
+- **Dependency updates.** `.github/dependabot.yml` opens weekly PRs for
+  `npm` and `github-actions` updates (minor + patch updates are bundled
+  so reviewers don't drown in individual PRs).
+- **Path aliases.** Cross-directory imports use the `@/` alias (mapped
+  to `src/` in both `vite.config.ts` and `tsconfig.app.json`); ESLint
+  enforces this via `no-restricted-imports`.
 
 ## 👨‍💻 Author
 
