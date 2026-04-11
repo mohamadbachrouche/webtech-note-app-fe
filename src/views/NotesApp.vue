@@ -1,220 +1,76 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import TopBar from '@/components/TopBar.vue'
 import Sidebar from '@/components/SideBar.vue'
 import NoteEditor from '@/components/NoteEditor.vue'
 import ToastHost from '@/components/ToastHost.vue'
-import type { Note } from '@/types'
-import * as ApiService from '@/services/ApiService'
 import { BACKGROUND_THEMES } from '@/constants'
-import { useToast } from '@/composables/useToast'
+import { useNotes } from '@/composables/useNotes'
+import { useTheme } from '@/composables/useTheme'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 
-const toast = useToast()
+// Note list + CRUD state.
+const {
+  selectedNoteId,
+  currentView,
+  isInitialLoad,
+  isLoading,
+  pinnedNotes,
+  regularNotes,
+  trashedNotes,
+  selectedNote,
+  loadNotes,
+  selectNote,
+  deselectNote,
+  switchView,
+  addNewNote,
+  updateNote,
+  moveToTrash,
+  restoreNote,
+  deletePermanently,
+} = useNotes()
 
-// --- 1. DEFINE ALL STATE REFS FIRST ---
-const allNotes = ref<Note[]>([])
-const selectedNoteId = ref<number | null>(null)
-const currentView = ref<'notes' | 'trash'>('notes')
-const isDarkMode = ref(false)
-const currentThemeColor = ref('green')
+// Dark mode + background theme.
+const {
+  isDarkMode,
+  currentThemeColor,
+  toggleDarkMode,
+  setBackground,
+  loadFromStorage: loadThemeFromStorage,
+  preloadBackgroundImages,
+} = useTheme()
+
+// Sidebar state is trivial enough to stay local.
 const sidebarCollapsed = ref(false)
-const isInitialLoad = ref(true)
-const isLoading = ref(false)
-
-// Monotonic request id for loadNotes() so that a late response from a
-// previously-toggled view can't overwrite the current one.
-let loadSequence = 0
-
-// --- 2. DEFINE ALL FUNCTIONS SECOND ---
-function setTheme(dark: boolean) {
-  isDarkMode.value = dark
-  localStorage.setItem('darkMode', dark ? 'true' : 'false')
-}
-
-function toggleTheme() {
-  setTheme(!isDarkMode.value)
-}
 
 function toggleSidebar() {
   sidebarCollapsed.value = !sidebarCollapsed.value
   localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value ? 'true' : 'false')
 }
 
-function setAppBackground(color: string) {
-  if (color in BACKGROUND_THEMES) {
-    currentThemeColor.value = color
-    localStorage.setItem('appBackground', color)
-  }
-}
-
-async function loadNotes() {
-  const seq = ++loadSequence
-  isLoading.value = true
-  try {
-    const response =
-      currentView.value === 'notes'
-        ? await ApiService.getActiveNotes()
-        : await ApiService.getTrashedNotes()
-    // Discard stale responses (e.g. rapid view toggles) so the latest
-    // request always wins.
-    if (seq !== loadSequence) return
-    allNotes.value = response.data
-  } catch (error) {
-    if (seq !== loadSequence) return
-    console.error('Failed to fetch notes:', error)
-    toast.error('Failed to load notes. Please try again.')
-  } finally {
-    if (seq === loadSequence) {
-      isLoading.value = false
-      isInitialLoad.value = false
-    }
-  }
-}
-
-function handleSelectNote(id: number) {
-  selectedNoteId.value = id
-}
-
-async function handleAddNewNote() {
-  const newNoteData = { title: 'New Note', content: '', color: '', tags: '' }
-  try {
-    const response = await ApiService.createNote(newNoteData)
-    await loadNotes() // Reload the list from the server
-    selectedNoteId.value = response.data.id
-  } catch (error) {
-    console.error('Failed to create note:', error)
-    toast.error('Failed to create note. Please try again.')
-  }
-}
-
-async function handleUpdateNote(noteToUpdate: Note) {
-  try {
-    const response = await ApiService.updateNote(noteToUpdate.id, noteToUpdate)
-    const index = allNotes.value.findIndex((n) => n.id === response.data.id)
-    if (index !== -1) {
-      allNotes.value[index] = response.data
-    }
-  } catch (error) {
-    console.error('Failed to update note:', error)
-    toast.error('Failed to save note. Please try again.')
-  }
-}
-
-async function handleMoveToTrash(noteId: number) {
-  try {
-    await ApiService.moveToTrash(noteId)
-    selectedNoteId.value = null
-    await loadNotes() // Reload the list
-  } catch (error) {
-    console.error('Failed to move note to trash:', error)
-    toast.error('Failed to move note to trash.')
-  }
-}
-
-async function handleRestoreNote(noteId: number) {
-  try {
-    await ApiService.restoreNote(noteId)
-    selectedNoteId.value = null
-    await loadNotes() // Reload the list
-  } catch (error) {
-    console.error('Failed to restore note:', error)
-    toast.error('Failed to restore note.')
-  }
-}
-
-async function handleDeletePermanently(noteId: number) {
-  try {
-    await ApiService.deleteNotePermanently(noteId)
-    selectedNoteId.value = null
-    await loadNotes() // Reload the list
-  } catch (error) {
-    console.error('Failed to permanently delete note:', error)
-    toast.error('Failed to delete note.')
-  }
-}
-
-function handleSwitchView(view: 'notes' | 'trash') {
-  currentView.value = view
-  selectedNoteId.value = null
-  loadNotes() // Reload notes for the new view
-}
-
-// --- KEYBOARD SHORTCUTS ---
-function handleKeydown(event: KeyboardEvent) {
-  // Ignore shortcuts when typing in input/textarea/contenteditable
-  const target = event.target as HTMLElement
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-    return
-  }
-
-  const mod = event.ctrlKey || event.metaKey
-
-  if (mod && event.key === 'n') {
-    event.preventDefault()
-    handleAddNewNote()
-    return
-  }
-
-  if (mod && event.key === 'Backspace') {
-    event.preventDefault()
+// Global keyboard shortcuts: Cmd/Ctrl+N, Cmd/Ctrl+Backspace, Escape.
+useKeyboardShortcuts({
+  onNewNote: () => addNewNote(),
+  onTrashSelected: () => {
     if (selectedNoteId.value !== null && currentView.value === 'notes') {
-      handleMoveToTrash(selectedNoteId.value)
+      moveToTrash(selectedNoteId.value)
     }
-    return
-  }
+  },
+  onDeselect: () => deselectNote(),
+})
 
-  if (event.key === 'Escape') {
-    selectedNoteId.value = null
-    return
-  }
-}
-
-// --- 3. DEFINE COMPUTED PROPERTIES THIRD ---
-const pinnedNotes = computed(() => allNotes.value.filter((n) => n.pinned && !n.inTrash))
-const regularNotes = computed(() => allNotes.value.filter((n) => !n.pinned && !n.inTrash))
-const selectedNote = computed(
-  () => allNotes.value.find((n) => n.id === selectedNoteId.value) || null,
-)
 const modKey = computed(() => (navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'))
 
-// --- 4. RUN ONMOUNTED HOOK LAST ---
 onMounted(async () => {
-  // Load theme
-  const savedTheme = localStorage.getItem('darkMode')
-  if (savedTheme !== null) {
-    setTheme(savedTheme === 'true')
-  } else {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    setTheme(prefersDark)
-  }
+  loadThemeFromStorage()
+  preloadBackgroundImages()
 
-  // Load background
-  const savedBg = localStorage.getItem('appBackground')
-  if (savedBg) {
-    setAppBackground(savedBg)
-  }
-
-  // Preload images
-  Object.values(BACKGROUND_THEMES).forEach((url) => {
-    const img = new Image()
-    img.src = url
-  })
-
-  // Register keyboard shortcuts
-  window.addEventListener('keydown', handleKeydown)
-
-  // Load sidebar state
   const savedSidebar = localStorage.getItem('sidebarCollapsed')
   if (savedSidebar === 'true') {
     sidebarCollapsed.value = true
   }
 
-  // Load initial notes
   await loadNotes()
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -241,15 +97,10 @@ onUnmounted(() => {
   >
     <TopBar
       :current-theme="currentThemeColor"
-      @toggle-theme="toggleTheme"
-      @change-background="setAppBackground"
+      @toggle-theme="toggleDarkMode"
+      @change-background="setBackground"
     />
-    <div
-      v-if="!isInitialLoad && isLoading"
-      class="top-progress"
-      role="status"
-      aria-live="polite"
-    >
+    <div v-if="!isInitialLoad && isLoading" class="top-progress" role="status" aria-live="polite">
       <span class="visually-hidden">Loading…</span>
     </div>
     <div class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
@@ -270,19 +121,19 @@ onUnmounted(() => {
       <Sidebar
         :pinned-notes="pinnedNotes"
         :regular-notes="regularNotes"
-        :trashed-notes="allNotes.filter((n) => n.inTrash)"
+        :trashed-notes="trashedNotes"
         :current-view="currentView"
-        @select-note="handleSelectNote"
-        @add-new-note="handleAddNewNote"
-        @switch-view="handleSwitchView"
+        @select-note="selectNote"
+        @add-new-note="addNewNote"
+        @switch-view="switchView"
       />
       <NoteEditor
         :selected-note="selectedNote"
-        @update-note="handleUpdateNote"
-        @move-to-trash="handleMoveToTrash"
-        @restore-note="handleRestoreNote"
-        @delete-permanently="handleDeletePermanently"
-        @back="selectedNoteId = null"
+        @update-note="updateNote"
+        @move-to-trash="moveToTrash"
+        @restore-note="restoreNote"
+        @delete-permanently="deletePermanently"
+        @back="deselectNote"
       />
     </div>
     <footer class="shortcut-legend">
